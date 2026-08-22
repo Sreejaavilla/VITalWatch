@@ -1,4 +1,4 @@
-# Demo script — OWNER: Avanthika + Ishan. 4 minutes.
+# Demo script — OWNER: Rackshitha + Ishan. 4 minutes.
 
 Write v1 before hour 6. Lock it at hour 15. Record the video against it at hour 15.
 

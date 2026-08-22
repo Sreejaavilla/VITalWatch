@@ -98,7 +98,7 @@ VITalWatch/
 │  ├─ components/          [Ishan]   Charts, KPI tiles, tables, alert banners
 │  ├─ lib/                 [Ishan]   Single API client; NEXT_PUBLIC_STUB_MODE flips to mocks/
 │  └─ mocks/               [Ishan]   Generated from contracts/fixtures — never hand-edited
-├─ docs/                   [Avanthika] Deck outline, compliance matrix, architecture, demo script, Q&A
+├─ docs/                   [Rackshitha] Deck outline, compliance matrix, architecture, demo script, Q&A
 └─ scripts/                [Kavin]   dev.sh, seed.sh, verify_audit.sh
 ```
 
@@ -142,7 +142,7 @@ Any component not demoable by hour 15 is cut, not finished.
 | **Ishan** | All 7 role dashboards, drill-down, alerts UI, demo flow | `frontend/` |
 | **Roxy** | Synthetic portfolio generator, CDISC/FHIR shaping | `datagen/`, `backend/app/api/routers/{export,fhir}.py` |
 | **Sreeja** | Pharmacovigilance: AE/SAE intake, semantic coding, signals | `services/pv/`, `backend/app/api/routers/{ae,signals}.py` |
-| **Avanthika** | Deck, compliance matrix, Q&A defence, demo script | `docs/` |
+| **Rackshitha** | Deck, compliance matrix, Q&A defence, demo script | `docs/` |
 
 ---
 
@@ -236,7 +236,7 @@ Every screen reachable, every endpoint returning fixture data. **Demo-ready at h
 - [ ] **[Kavin]** Freeze `main`. Feature work moves to branches that will not be merged before hour 18.
 - [ ] **[Ishan + Rackshitha]** **Record the backup demo video** against whatever works at this moment. Screen recording, narrated, 4 minutes, uploaded somewhere playable offline. ⛔ blocks: sleeping soundly
 - [ ] **[Ishan]** Watch the video back once. If a screen looks broken on camera, that is the only thing anyone fixes before hour 18.
-- [ ] **[Avanthika]** Deck locked. Architecture slide, compliance mapping slide, the deferred-scope slide.
+- [ ] **[Rackshitha]** Deck locked. Architecture slide, compliance mapping slide, the deferred-scope slide.
 - [ ] **[Kavin]** Tag the commit the video was recorded from. If Phase 4 breaks anything, this tag is the demo.
 - [ ] **[Caleb]** Rotate any key that got pasted into a chat. Confirm `.env` is not in git: `git log --all --full-history -- '*.env'` returns nothing.
 - [ ] **[Everyone]** Two people sleep 90 minutes, staggered. Q&A performance is a function of sleep.
@@ -288,13 +288,13 @@ Only whatever survived. Pick from the top of this list, stop when the clock says
 | Risk | Likelihood | Blast radius | Mitigation | Owner |
 |---|---|---|---|---|
 | **Late integration** — pieces built separately, first joined at hour 20 | High | Fatal | Contracts frozen at hour 2; stub mode and frontend mocks read the *same* fixture files; `STUB_MODE=false` flipped at hour 12, not hour 22 | Kavin |
-| **Scope creep from the compliance surface** — 10 regulations feel like 10 features | High | Severe | The compliance matrix is a *document*, not a sprint. Only audit trail, RBAC, pseudonymisation and reporting timelines are built. Everything else is a mapped row | Avanthika |
+| **Scope creep from the compliance surface** — 10 regulations feel like 10 features | High | Severe | The compliance matrix is a *document*, not a sprint. Only audit trail, RBAC, pseudonymisation and reporting timelines are built. Everything else is a mapped row | Rackshitha |
 | **Deploy fails at the end** | Medium | Fatal | Deploy is live at hour 2 and every push after; hour-15 video is the insurance; tagged commit is the rollback | Kavin |
 | **Render free tier cold start / sleeps mid-demo** | High | Moderate | Warm it 10 min before; keep the stub-mode Vercel build as instant fallback | Kavin |
 | **Sentence Transformers won't run on free tier RAM** | Medium | Low | Decision point at hour 8: precompute embeddings in Colab, ship the `.npy`, ship only the query encoder — or fall back to exact match | Sreeja |
 | **RBAC / audit half-done at hour 15** | Medium | Severe | These are Caleb's *only* two tasks. If he's behind at hour 10, Kavin drops KPI work and takes RBAC | Caleb |
 | **One person's component is the demo's single point of failure** | Medium | Severe | Every screen has a fixture-backed path; nothing in the click path requires a live subsystem | Ishan |
-| **A judge asks "is this real MedDRA?"** | Certain | Low *if prepared*, severe if not | Say it first, unprompted, on the PV slide. Owning the limitation reads as rigour; being caught reads as bluffing | Avanthika |
+| **A judge asks "is this real MedDRA?"** | Certain | Low *if prepared*, severe if not | Say it first, unprompted, on the PV slide. Owning the limitation reads as rigour; being caught reads as bluffing | Rackshitha |
 | **Merge conflicts / lost work** | Medium | Moderate | One router file per owner; only `main.py` is shared and it's written once at hour 0. Push every 30 minutes | Kavin |
 | **Someone works 24 hours and is incoherent at Q&A** | High | Moderate | Staggered 90-minute sleep in Phase 3. Enforced, not suggested | Everyone |
 

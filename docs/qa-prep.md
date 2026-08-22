@@ -1,4 +1,4 @@
-# Q&A defence — OWNER: Avanthika
+# Q&A defence — OWNER: Rackshitha
 
 Every person must be able to answer three questions about someone else's component.
 

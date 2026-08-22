@@ -1,4 +1,4 @@
-# Architecture — OWNER: Avanthika (narrative) / Kavin (facts)
+# Architecture — OWNER: Rackshitha (narrative) / Kavin (facts)
 
 One slide's worth. Cover:
 

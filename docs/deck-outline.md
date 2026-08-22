@@ -1,4 +1,4 @@
-# Deck — OWNER: Avanthika. Locked at hour 15.
+# Deck — OWNER: Rackshitha. Locked at hour 15.
 
 1. **The problem** — AIIA's portfolio lives in disconnected spreadsheets; decisions are late
    and regulatory deadlines get missed. One sentence, one number.
