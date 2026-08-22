@@ -1,0 +1,11 @@
+-- Database schema. OWNER: Caleb. Apply: psql "$DATABASE_URL" -f backend/app/db/schema.sql
+--
+-- Tables: users, studies, sites, subjects, visits, deviations, data_queries,
+--         adverse_events, milestones, alerts, audit_events
+--
+-- Non-negotiable constraints:
+--   * subjects has NO name column. subject_code only. (DPDP Act 2023)
+--   * audit_events is append-only: revoke UPDATE and DELETE, and add a trigger
+--     that raises on either. The guarantee must not depend on app code.
+--   * audit_events.seq is a gapless sequence; prev_hash references the previous row.
+--   * every timestamp is timestamptz, server-generated, never client-supplied.

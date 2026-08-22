@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+pydantic>=2
+pydantic-settings
+python-jose[cryptography]
+httpx
+psycopg[binary]
+sqlalchemy
+python-dotenv
+pyyaml

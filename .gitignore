@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+.env.local
+node_modules/
+.next/
+out/
+datagen/out/*
+!datagen/out/.gitkeep
+!datagen/out/snapshot.json
+*.npy
+.DS_Store
+.vercel

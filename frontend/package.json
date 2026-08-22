@@ -1,0 +1,12 @@
+{
+  "name": "vitalwatch-frontend",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "sync-mocks": "cp -r ../contracts/fixtures/*.json ./mocks/"
+  },
+  "dependencies": {},
+  "devDependencies": {}
+}

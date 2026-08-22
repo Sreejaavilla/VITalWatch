@@ -1,0 +1,39 @@
+# API contract. OWNER: Kavin. FROZEN AT HOUR 2.
+# Every endpoint below must exist and return its documented shape before the Phase 0 gate,
+# even if the body is hardcoded. Ishan builds against this file, not against running code.
+
+openapi: 3.1.0
+info: { title: VITalWatch CTMS API, version: 0.1.0 }
+
+# --- Kavin ---
+# GET  /health                          -> {status, stub_mode}
+# GET  /api/studies                     -> Study[]
+# GET  /api/studies/{id}                -> Study
+# GET  /api/sites                       -> Site[]
+# GET  /api/enrolment/{study_id}        -> {actual[], expected[], target}
+# GET  /api/kpi/portfolio               -> KPISnapshot
+# GET  /api/kpi/study/{id}              -> KPISnapshot
+# GET  /api/alerts                      -> Alert[]
+# POST /api/alerts/{id}/ack             -> Alert
+#
+# --- Caleb ---
+# POST /auth/login                      -> {access_token, role}
+# GET  /auth/me                         -> User
+# GET  /api/users                       -> User[]            (admin only)
+# GET  /api/audit                       -> AuditEvent[]      (filters: actor, role, from, to)
+# GET  /api/audit/verify                -> {ok, broken_at|null}
+#
+# --- Sreeja ---
+# POST /api/ae                          -> AdverseEvent      (codes + computes deadlines)
+# GET  /api/ae                          -> AdverseEvent[]
+# GET  /api/ae/{id}                     -> AdverseEvent
+# POST /api/coding/suggest              -> {candidates: [{term, code, score}]}
+# GET  /api/signals                     -> aggregated AE counts by term x study x severity
+#
+# --- Roxy ---
+# GET  /api/export/sdtm?domain=DM|AE    -> text/csv          (regulator, admin)
+# GET  /api/export/define-xml           -> application/xml
+# GET  /api/fhir/ResearchStudy/{id}     -> FHIR R4 ResearchStudy
+# GET  /api/fhir/AdverseEvent/{id}      -> FHIR R4 AdverseEvent
+
+paths: {}
