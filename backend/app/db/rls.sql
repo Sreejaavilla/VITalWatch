@@ -1,6 +1,0 @@
--- Row Level Security policies. OWNER: Caleb.
---
--- DESIGN ARTIFACT, not a runtime dependency for this build. Enforcement in the
--- demo is at the application layer (auth/rbac.py) where it is testable and
--- demonstrable in 24 hours. This file is what we show when a judge asks about
--- defence in depth, and it is the first thing enabled post-hackathon.

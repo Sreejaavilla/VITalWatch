@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+{% from "_macros.html" import tile, badge, severity_badge, bar %}
+{% block title %}{{ study.id }} — {{ settings.app_name }}{% endblock %}
+
+{% block content %}
+<div class="flex items-baseline justify-between gap-4">
+  <a href="/portfolio" class="text-sm text-slate-500 hover:text-slate-800">← Portfolio</a>
+  <div class="flex shrink-0 items-center gap-4 text-xs text-slate-400">
+    <a href="/api/kpi/study/{{ study.id }}" class="hover:text-slate-600">KPIs as JSON</a>
+    <a href="/api/fhir/ResearchStudy/{{ study.id }}" class="hover:text-slate-600"
+       title="This study as an HL7 FHIR R4 ResearchStudy resource — structure, not a live integration">
+      FHIR R4
+    </a>
+    <a href="/api/export/sdtm/dm.csv?study_id={{ study.id }}"
+       class="rounded border border-slate-300 px-3 py-1.5 font-medium text-slate-600 hover:bg-slate-100"
+       title="CDISC SDTM Demographics domain for this study">
+      Export SDTM DM ↓
+    </a>
+  </div>
+</div>
+
+<div class="mt-2 flex items-start justify-between gap-8">
+  <div>
+    <h1 class="text-2xl font-semibold tracking-tight text-slate-900">{{ study.title }}</h1>
+    <p class="mt-1 text-sm text-slate-500">
+      {{ study.id }} · {{ study.protocol_no }} · Phase {{ study.phase }} ·
+      {{ study.therapeutic_area }} · {{ study.pi_name }}
+    </p>
+  </div>
+  <div class="flex shrink-0 flex-col items-end gap-1">
+    {{ badge(study.status.replace('_',' ')|capitalize, 'info') }}
+    {% if study.ctri_number %}
+      <span class="text-xs text-slate-500">{{ study.ctri_number }}</span>
+    {% else %}
+      {{ badge('No CTRI registration', 'bad') }}
+    {% endif %}
+  </div>
+</div>
+
+{% if not study.ctri_number and study.status in ('enrolling', 'screening', 'follow_up') %}
+<div class="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">
+  <span class="font-medium">Enrolling without a CTRI registration number.</span>
+  Prospective registration with the Clinical Trials Registry — India is mandatory before
+  the first subject is enrolled. This study should not be recruiting.
+</div>
+{% endif %}
+
+<div class="mt-6 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
+  {{ tile('Enrolment', k.enrolment_pct ~ '%', k.enrolled ~ ' of ' ~ k.target,
+          'bad' if k.enrolled < k.expected_by_today * 0.85 else 'good') }}
+  {{ tile('Plan to date', k.expected_by_today, 'subjects expected') }}
+  {{ tile('Screen failure', k.screen_failure_rate ~ '%', 'of those screened',
+          'warn' if k.screen_failure_rate > 30 else 'neutral') }}
+  {{ tile('Visit compliance', k.visit_compliance_pct ~ '%', 'of visits due',
+          'warn' if k.visit_compliance_pct < 90 else 'good') }}
+  {{ tile('Open queries', k.open_queries, 'avg ' ~ k.open_query_ageing_days ~ ' days old',
+          'warn' if k.open_query_ageing_days > 30 else 'neutral') }}
+  {{ tile('Open SAEs', k.open_saes, k.deviation_rate_per_site ~ ' deviations/site',
+          'bad' if k.open_saes else 'good') }}
+</div>
+
+<div class="mt-6 rounded-lg border border-slate-200 bg-white p-5">
+  <div class="flex items-baseline justify-between text-sm">
+    <span class="font-medium text-slate-700">Enrolment against plan</span>
+    <span class="tabular-nums text-slate-500">
+      {{ k.enrolled }} enrolled · {{ k.expected_by_today }} planned by today · target {{ k.target }}
+    </span>
+  </div>
+  <div class="mt-3">{{ bar(k.enrolled, k.target, k.expected_by_today) }}</div>
+  {% if k.next_milestone %}
+    <p class="mt-3 text-xs text-slate-500">
+      Next milestone: <span class="font-medium text-slate-700">{{ k.next_milestone }}</span>
+      in {{ k.days_to_next_milestone }} days.
+    </p>
+  {% endif %}
+</div>
+
+<div class="mt-6 grid gap-6 lg:grid-cols-2">
+
+  <section class="rounded-lg border border-slate-200 bg-white">
+    <h2 class="border-b border-slate-200 px-5 py-3 text-sm font-medium text-slate-700">
+      Sites <span class="text-slate-400">({{ sites|length }})</span>
+    </h2>
+    <table class="w-full text-sm">
+      <tbody class="divide-y divide-slate-100">
+        {% for s in sites %}
+        <tr>
+          <td class="px-5 py-3">
+            <div class="text-slate-900">{{ s.name }}</div>
+            <div class="text-xs text-slate-500">{{ s.city }}, {{ s.state }} · {{ s.pi_name }}</div>
+          </td>
+          <td class="px-5 py-3 text-right">
+            {{ badge(s.status|capitalize, 'good' if s.status == 'activated' else 'warn') }}
+          </td>
+          <td class="px-5 py-3 text-right text-xs tabular-nums text-slate-600">
+            {{ s.enrolled_here }} subjects
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <section class="rounded-lg border border-slate-200 bg-white">
+    <h2 class="border-b border-slate-200 px-5 py-3 text-sm font-medium text-slate-700">
+      Milestones
+    </h2>
+    <ol class="divide-y divide-slate-100">
+      {% for m in milestones %}
+      {% set tone = {'achieved':'bg-emerald-500','missed':'bg-red-500','at_risk':'bg-amber-500'}.get(m.status, 'bg-slate-300') %}
+      <li class="flex items-center gap-3 px-5 py-2.5 text-sm">
+        <span class="h-2.5 w-2.5 shrink-0 rounded-full {{ tone }}"></span>
+        <span class="flex-1 text-slate-700">{{ m.type.replace('_',' ')|capitalize }}</span>
+        <span class="text-xs tabular-nums text-slate-500">
+          {% if m.actual_date %}{{ m.actual_date | d }}{% else %}planned {{ m.planned_date | d }}{% endif %}
+        </span>
+      </li>
+      {% endfor %}
+    </ol>
+  </section>
+
+  <section class="rounded-lg border border-slate-200 bg-white lg:col-span-2">
+    <h2 class="border-b border-slate-200 px-5 py-3 text-sm font-medium text-slate-700">
+      Protocol deviations <span class="text-slate-400">({{ deviations|length }})</span>
+    </h2>
+    <table class="w-full text-sm">
+      <thead class="border-b border-slate-100 text-left text-xs uppercase tracking-wide text-slate-500">
+        <tr>
+          <th class="px-5 py-2 font-medium">Detected</th>
+          <th class="px-5 py-2 font-medium">Category</th>
+          <th class="px-5 py-2 font-medium">Description</th>
+          <th class="px-5 py-2 font-medium">Severity</th>
+          <th class="px-5 py-2 font-medium">Reported to EC</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100">
+        {% for d in deviations %}
+        <tr>
+          <td class="px-5 py-2.5 text-xs tabular-nums text-slate-500">{{ d.detected_date | d }}</td>
+          <td class="px-5 py-2.5 text-slate-700">{{ d.category }}</td>
+          <td class="px-5 py-2.5 text-slate-600">{{ d.description }}</td>
+          <td class="px-5 py-2.5">{{ severity_badge(d.severity) }}</td>
+          <td class="px-5 py-2.5">
+            {% if d.reported_to_ec %}
+              <span class="text-xs text-slate-500">{{ d.reported_date | d }}</span>
+            {% elif d.severity in ('major', 'critical') %}
+              {# Major and critical deviations are reportable. This gap is the finding. #}
+              {{ badge('Not reported', 'bad') }}
+            {% else %}
+              <span class="text-xs text-slate-400">not reportable</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" class="px-5 py-4 text-sm text-slate-400">No deviations recorded.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <section class="rounded-lg border border-slate-200 bg-white lg:col-span-2">
+    <h2 class="border-b border-slate-200 px-5 py-3 text-sm font-medium text-slate-700">
+      Open data queries <span class="text-slate-400">({{ queries|length }})</span>
+    </h2>
+    <table class="w-full text-sm">
+      <tbody class="divide-y divide-slate-100">
+        {% for q in queries %}
+        <tr>
+          <td class="px-5 py-2.5 text-xs tabular-nums text-slate-500">{{ q.raised_date | d }}</td>
+          <td class="px-5 py-2.5 font-mono text-xs text-slate-700">{{ q.field }}</td>
+          <td class="px-5 py-2.5 text-slate-600">{{ q.question }}</td>
+          <td class="px-5 py-2.5 text-xs text-slate-500">{{ q.subject_code }}</td>
+          <td class="px-5 py-2.5 text-right">{{ badge(q.status|capitalize, 'warn' if q.status == 'open' else 'info') }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" class="px-5 py-4 text-sm text-slate-400">No open queries.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+</div>
+{% endblock %}

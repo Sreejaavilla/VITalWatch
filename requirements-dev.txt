@@ -1,8 +1,0 @@
--r backend/requirements.txt
-pytest
-# datagen (Roxy)
-faker
-numpy
-# pv (Sreeja) — install only when moving off PV_CODING_BACKEND=mock
-# sentence-transformers
-# faiss-cpu

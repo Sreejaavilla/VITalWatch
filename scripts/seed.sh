@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
-# Generate the synthetic portfolio and load it into Supabase. OWNER: Kavin / Roxy.
-#   python -m datagen.run --out contracts/fixtures/ --seed 1947
-#   python -m datagen.seed
+# Rebuild the synthetic portfolio from scratch.
+# This is the demo-recovery plan: if the data gets into a strange state on stage,
+# run this and restart. The generator is seeded, so the portfolio comes back identical.
 set -euo pipefail
-echo "not implemented"
+cd "$(dirname "$0")/.."
+rm -f data/ctms.db
+.venv/bin/python -m app.db

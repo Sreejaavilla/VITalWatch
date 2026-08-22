@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Walk the audit hash chain and print OK, or the sequence number where it broke.
-# OWNER: Caleb. This script is a demo prop — run it on stage after tampering with a row.
+# A demo prop: tamper with a row, run this, and watch it name the row.
 set -euo pipefail
-echo "not implemented"
+cd "$(dirname "$0")/.."
+.venv/bin/python -m app.audit

@@ -1,0 +1,4 @@
+/* Tailwind comes from the CDN. This file holds only what utilities cannot express. */
+
+/* Numbers in KPI tiles and tables must line up column-to-column when they change. */
+.tabular-nums { font-variant-numeric: tabular-nums; }

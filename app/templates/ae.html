@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+{% from "_macros.html" import badge, severity_badge %}
+{% block title %}Adverse events — {{ settings.app_name }}{% endblock %}
+
+{% block content %}
+<div class="flex items-baseline justify-between">
+  <div>
+    <h1 class="text-2xl font-semibold tracking-tight text-slate-900">Adverse events</h1>
+    <p class="mt-1 text-sm text-slate-500">
+      Serious events first. Statutory clocks under the New Drugs and Clinical Trials
+      Rules 2019 — 24 hours to the Ethics Committee and licensing authority, 14 days for
+      the narrative — are computed from the server clock at intake.
+    </p>
+  </div>
+  <a href="/signals"
+     class="shrink-0 rounded border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100">
+    Safety signals →
+  </a>
+</div>
+
+{% if filed_event %}
+<div class="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
+  <div class="font-medium">Event filed and written to the audit trail.</div>
+
+  <dl class="mt-3 grid gap-x-8 gap-y-2 sm:grid-cols-3">
+    <div>
+      <dt class="text-xs uppercase tracking-wide opacity-70">Coded to</dt>
+      <dd class="mt-0.5">
+        {% if filed_event.coded_term %}
+          <span class="font-medium">{{ filed_event.coded_term }}</span>
+          <span class="opacity-70">{{ filed_event.coded_code }}</span>
+          <span class="block text-xs opacity-70">
+            confidence {{ filed_event.coding_confidence }} ·
+            source {{ filed_event.coding_source }} (app/terms.csv, not MedDRA)
+          </span>
+        {% else %}
+          <span class="font-medium">Left uncoded</span>
+          <span class="block text-xs opacity-70">
+            nothing in the vocabulary cleared the confidence floor — an honest gap
+            rather than a guess
+          </span>
+        {% endif %}
+      </dd>
+    </div>
+
+    <div>
+      <dt class="text-xs uppercase tracking-wide opacity-70">Reporting clock</dt>
+      <dd class="mt-0.5">
+        {% if filed_event.serious %}
+          <span class="font-medium tabular-nums">
+            {{ filed_hours|round(1) }} hours to the 24-hour deadline
+          </span>
+          <span class="block text-xs opacity-70">
+            EC and licensing authority by {{ filed_event.deadline_24h | dt }} ·
+            narrative by {{ filed_event.deadline_14d | d }}
+          </span>
+        {% else %}
+          <span class="font-medium">No statutory clock</span>
+          <span class="block text-xs opacity-70">
+            non-serious events carry no 24-hour reporting obligation
+          </span>
+        {% endif %}
+      </dd>
+    </div>
+
+    <div>
+      <dt class="text-xs uppercase tracking-wide opacity-70">Audit</dt>
+      <dd class="mt-0.5">
+        <a href="/audit" class="font-medium underline">See the audit entry →</a>
+        <span class="block text-xs opacity-70">
+          recorded in the same transaction as the event itself
+        </span>
+      </dd>
+    </div>
+  </dl>
+</div>
+{% endif %}
+
+<section class="mt-6 rounded-lg border border-slate-200 bg-white p-5">
+  <h2 class="text-sm font-medium text-slate-700">Report an adverse event</h2>
+  <form method="post" action="/ae" class="mt-4 grid gap-4 md:grid-cols-3">
+
+    <label class="block text-sm">
+      <span class="text-slate-600">Study</span>
+      <select name="study_id" required
+              class="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-sm">
+        {% for s in studies %}<option value="{{ s.id }}">{{ s.id }} — {{ s.title }}</option>{% endfor %}
+      </select>
+    </label>
+
+    <label class="block text-sm">
+      <span class="text-slate-600">Subject code</span>
+      <input name="subject_code" required placeholder="AIIA-001-004"
+             class="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-sm">
+      {# Pseudonymous code only. There is no name field to type into. #}
+      <span class="mt-1 block text-xs text-slate-400">Pseudonymous code only — no participant name.</span>
+    </label>
+
+    <label class="block text-sm">
+      <span class="text-slate-600">Onset date</span>
+      <input name="onset_date" type="date" required
+             class="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-sm">
+    </label>
+
+    <label class="block text-sm md:col-span-3">
+      <span class="text-slate-600">Narrative as reported</span>
+      <textarea name="narrative" required rows="2"
+                placeholder="severe abdominal pain, subject hospitalised for observation"
+                class="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-sm"></textarea>
+    </label>
+
+    <label class="block text-sm">
+      <span class="text-slate-600">Severity</span>
+      <select name="severity" class="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-sm">
+        <option value="mild">Mild</option>
+        <option value="moderate">Moderate</option>
+        <option value="severe">Severe</option>
+      </select>
+    </label>
+
+    <label class="block text-sm">
+      <span class="text-slate-600">Causality (WHO-UMC)</span>
+      <select name="causality" class="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-sm">
+        <option value="unrelated">Unrelated</option>
+        <option value="unlikely">Unlikely</option>
+        <option value="possible" selected>Possible</option>
+        <option value="probable">Probable</option>
+        <option value="certain">Certain</option>
+      </select>
+    </label>
+
+    <label class="block text-sm">
+      <span class="text-slate-600">Outcome</span>
+      <select name="outcome" class="mt-1 w-full rounded border border-slate-300 px-3 py-2 text-sm">
+        <option value="recovering" selected>Recovering</option>
+        <option value="recovered">Recovered</option>
+        <option value="not_recovered">Not recovered</option>
+        <option value="recovered_with_sequelae">Recovered with sequelae</option>
+        <option value="fatal">Fatal</option>
+        <option value="unknown">Unknown</option>
+      </select>
+    </label>
+
+    <div class="flex items-center justify-between gap-4 md:col-span-3">
+      <label class="flex items-center gap-2 text-sm text-slate-700">
+        <input type="checkbox" name="serious" value="true" class="rounded border-slate-300">
+        Serious — starts the 24-hour reporting clock
+      </label>
+      <button type="submit"
+              class="rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700">
+        File event
+      </button>
+    </div>
+  </form>
+</section>
+
+<div class="mt-8 overflow-hidden rounded-lg border border-slate-200 bg-white">
+  <table class="w-full text-sm">
+    <thead class="border-b border-slate-200 bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+      <tr>
+        <th class="px-4 py-3 font-medium">Reported</th>
+        <th class="px-4 py-3 font-medium">Subject</th>
+        <th class="px-4 py-3 font-medium">Narrative</th>
+        <th class="px-4 py-3 font-medium">Coded term</th>
+        <th class="px-4 py-3 font-medium">Severity</th>
+        <th class="px-4 py-3 font-medium">Causality</th>
+        <th class="px-4 py-3 font-medium">24h clock</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-100">
+      {% for e in events %}
+      {% set left = clocks.get(e.id) %}
+      <tr class="{{ 'bg-red-50/50' if e.timeline_status == 'breached' else '' }}">
+        <td class="px-4 py-3 text-xs tabular-nums text-slate-500">{{ e.reported_at | dt }}</td>
+        <td class="px-4 py-3">
+          <div class="text-slate-700">{{ e.subject_code }}</div>
+          <a href="/study/{{ e.study_id }}" class="text-xs text-slate-400 hover:text-sky-700">{{ e.study_id }}</a>
+        </td>
+        <td class="px-4 py-3 text-slate-600">
+          {{ e.narrative }}
+          {% if e.serious %}<span class="ml-1">{{ badge('SAE', 'bad') }}</span>{% endif %}
+        </td>
+        <td class="px-4 py-3">
+          {% if e.coded_term %}
+            <span class="text-slate-700">{{ e.coded_term }}</span>
+            <span class="block text-xs text-slate-400">
+              {{ e.coded_code }} · {{ e.coding_source }} · {{ e.coding_confidence }}
+            </span>
+          {% else %}
+            {{ badge('Uncoded', 'neutral') }}
+          {% endif %}
+        </td>
+        <td class="px-4 py-3">{{ severity_badge(e.severity) }}</td>
+        <td class="px-4 py-3 text-xs text-slate-600">{{ e.causality|capitalize }}</td>
+        <td class="px-4 py-3">
+          {% if e.timeline_status == 'not_applicable' %}
+            <span class="text-xs text-slate-400">n/a</span>
+          {% elif left is not none and left < 0 %}
+            {{ badge('Breached ' ~ (-left)|round(0)|int ~ 'h ago', 'bad') }}
+          {% elif e.timeline_status == 'due_soon' %}
+            {{ badge(left|round(0)|int ~ 'h left', 'warn') }}
+          {% else %}
+            {{ badge((left|round(0)|int if left is not none else '') ~ 'h left', 'good') }}
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+<p class="mt-4 text-xs text-slate-500">
+  Narratives are coded against <code class="font-mono">app/terms.csv</code>, a vocabulary
+  written for this demonstration. MedDRA and WHODrug are the licensed dictionaries the
+  real system would use; we do not have them and do not approximate them, which is why
+  every coded row reads <span class="font-medium">curated</span> as its source. The
+  interface is what carries over — swapping in a licensed dictionary changes the file,
+  not the code. An event whose narrative matches nothing confidently stays
+  <span class="font-medium">Uncoded</span> rather than being guessed into the wrong bucket.
+</p>
+{% endblock %}

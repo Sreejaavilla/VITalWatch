@@ -1,19 +1,26 @@
-# Render blueprint. OWNER: Kavin.
-# Deploy: Render dashboard -> New -> Blueprint -> point at this repo.
-# Free tier, no card. Instance sleeps after ~15 min idle and cold-starts in ~50s —
-# warm it 10 minutes before pitching (Phase 5 checklist).
+# One web service. No database service, no worker, no build step beyond pip.
+#
+# SQLite on an ephemeral disk is deliberate here rather than a compromise: the database
+# seeds itself from a fixed seed on startup, so a restart produces a byte-identical
+# portfolio instead of an empty one. That is the correct posture for a demonstration and
+# explicitly not the production posture — production is Postgres, and the swap is the
+# connection in app/db.py.
 services:
   - type: web
-    name: vitalwatch-api
+    name: vitalwatch
     runtime: python
     plan: free
-    buildCommand: pip install -r backend/requirements.txt
-    startCommand: uvicorn backend.app.main:app --host 0.0.0.0 --port $PORT
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /health
     envVars:
+      # Every threshold is configuration, not code. Overriding one here and redeploying
+      # changes what the dashboard alerts on, with no source change.
+      - key: ENROLMENT_LAG_PCT
+        value: "80"
+      - key: ETHICS_RENEWAL_DAYS
+        value: "60"
+      - key: MONITORING_OVERDUE_DAYS
+        value: "14"
       - key: PYTHON_VERSION
-        value: "3.12.6"
-      - key: STUB_MODE
-        value: "true"          # flip to false at hour 12, not hour 22
-      - key: CORS_ORIGINS
-        value: "http://localhost:3000"   # add the Vercel URL once it exists
+        value: "3.12"

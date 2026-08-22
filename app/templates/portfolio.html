@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% from "_macros.html" import tile, badge, bar %}
+{% block title %}Portfolio — {{ settings.app_name }}{% endblock %}
+
+{% block content %}
+<div class="flex items-baseline justify-between">
+  <div>
+    <h1 class="text-2xl font-semibold tracking-tight text-slate-900">Trial portfolio</h1>
+    <p class="mt-1 text-sm text-slate-500">
+      Every study the centre oversees, as at {{ today.strftime('%d %B %Y') }}.
+    </p>
+  </div>
+  <a href="/api/kpi/portfolio" class="text-xs text-slate-400 hover:text-slate-600">these numbers as JSON →</a>
+</div>
+
+<div class="mt-6 grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
+  {{ tile('Active studies', k.active_studies) }}
+  {{ tile('Enrolled', k.enrolled_total, 'of ' ~ k.target_total ~ ' target (' ~ k.enrolment_pct|round(0)|int ~ '%)',
+          'warn' if k.enrolment_pct < 60 else 'good') }}
+  {{ tile('Sites activated', k.sites_activated, 'of ' ~ k.sites_total) }}
+  {{ tile('Open queries', k.open_queries, 'raised, not closed', 'warn' if k.open_queries > 30 else 'neutral') }}
+  {{ tile('Overdue monitoring', k.overdue_monitoring_visits, 'visits or reports', 'bad' if k.overdue_monitoring_visits else 'good') }}
+  {{ tile('Open SAEs', k.open_saes, 'outcome not final', 'bad' if k.open_saes else 'good') }}
+</div>
+
+{% if alerts %}
+<section class="mt-8 overflow-hidden rounded-lg border border-slate-200 bg-white">
+  <div class="flex items-baseline justify-between border-b border-slate-200 px-4 py-3">
+    <h2 class="text-sm font-medium text-slate-700">
+      Alerts <span class="text-slate-400">({{ alerts|length }})</span>
+    </h2>
+    <span class="text-xs text-slate-400">
+      thresholds: enrolment &lt;{{ settings.enrolment_lag_pct|round(0)|int }}% of plan ·
+      EC renewal &lt;{{ settings.ethics_renewal_days }}d ·
+      monitoring &gt;{{ settings.monitoring_overdue_days }}d — all set in .env
+    </span>
+  </div>
+  <ul class="divide-y divide-slate-100">
+    {% for a in alerts %}
+    {% set tone = {'critical': 'bg-red-500', 'warning': 'bg-amber-500'}.get(a.severity.value, 'bg-sky-500') %}
+    <li>
+      <a href="{{ a.deep_link }}" class="flex items-start gap-3 px-4 py-3 hover:bg-slate-50">
+        <span class="mt-1.5 h-2 w-2 shrink-0 rounded-full {{ tone }}"></span>
+        <span class="flex-1 text-sm">
+          <span class="text-slate-800">{{ a.message }}</span>
+          <span class="mt-0.5 block text-xs text-slate-500">
+            {{ a.study_id }} · {{ a.study_title }} · rule
+            <code class="font-mono">{{ a.rule.value }}</code>
+          </span>
+        </span>
+        <span class="shrink-0 text-xs text-slate-300">→</span>
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% else %}
+<div class="mt-8 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+  No alerts at the current thresholds.
+</div>
+{% endif %}
+
+<div class="mt-8 overflow-hidden rounded-lg border border-slate-200 bg-white">
+  <table class="w-full text-sm">
+    <thead class="border-b border-slate-200 bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+      <tr>
+        <th class="px-4 py-3 font-medium">Study</th>
+        <th class="px-4 py-3 font-medium">Phase</th>
+        <th class="px-4 py-3 font-medium">Status</th>
+        <th class="px-4 py-3 font-medium">CTRI</th>
+        <th class="px-4 py-3 font-medium w-48">Enrolment</th>
+        <th class="px-4 py-3 font-medium text-right">Sites</th>
+        <th class="px-4 py-3 font-medium text-right">Queries</th>
+        <th class="px-4 py-3 font-medium text-right">SAEs</th>
+        <th class="px-4 py-3 font-medium">EC expiry</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-100">
+      {% for s in studies %}
+      <tr class="hover:bg-slate-50">
+        <td class="px-4 py-3">
+          <a href="/study/{{ s.id }}" class="font-medium text-slate-900 hover:text-sky-700">{{ s.title }}</a>
+          <div class="text-xs text-slate-500">{{ s.id }} · {{ s.protocol_no }} · {{ s.pi_name }}</div>
+        </td>
+        <td class="px-4 py-3 text-slate-600">{{ s.phase }}</td>
+        <td class="px-4 py-3">{{ badge(s.status.replace('_',' ')|capitalize, 'info' if s.status == 'enrolling' else 'neutral') }}</td>
+        <td class="px-4 py-3">
+          {% if s.ctri_number %}
+            <span class="text-xs text-slate-600">{{ s.ctri_number }}</span>
+          {% else %}
+            {# Prospective CTRI registration is mandatory. Enrolling without one is a finding. #}
+            {{ badge('Not registered', 'bad') }}
+          {% endif %}
+        </td>
+        <td class="px-4 py-3">
+          <div class="flex items-center gap-2">
+            <div class="flex-1">{{ bar(s.actual_enrolment, s.target_enrolment) }}</div>
+            <span class="w-16 text-right text-xs tabular-nums text-slate-600">
+              {{ s.actual_enrolment }}/{{ s.target_enrolment }}
+            </span>
+          </div>
+        </td>
+        <td class="px-4 py-3 text-right tabular-nums text-slate-600">{{ s.site_count }}</td>
+        <td class="px-4 py-3 text-right tabular-nums text-slate-600">{{ s.open_queries }}</td>
+        <td class="px-4 py-3 text-right tabular-nums {{ 'font-semibold text-red-700' if s.saes else 'text-slate-600' }}">{{ s.saes }}</td>
+        <td class="px-4 py-3 text-xs">
+          {# Inside the renewal window an approval needs action now, not at expiry. #}
+          {% if s.ec_days is not none and s.ec_days <= settings.ethics_renewal_days %}
+            {{ badge(s.ec_expiry_date | d ~ ' · ' ~ s.ec_days ~ 'd', 'warn') }}
+          {% else %}
+            <span class="text-slate-600">{{ s.ec_expiry_date | d }}</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

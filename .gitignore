@@ -3,14 +3,12 @@ __pycache__/
 .venv/
 venv/
 .env
-.env.local
+data/*.db
+.DS_Store
+
+# Runtime data — the database is generated from a fixed seed, never committed.
+data/
+
+# Node artefacts from the deleted scaffold, in case anything reappears.
 node_modules/
 .next/
-out/
-datagen/out/*
-!datagen/out/.gitkeep
-!datagen/out/snapshot.json
-*.npy
-.DS_Store
-.vercel
-node_modules/

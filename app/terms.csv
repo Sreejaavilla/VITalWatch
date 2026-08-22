@@ -1,0 +1,73 @@
+code,term,soc,synonyms
+VW-T0001,Headache,Nervous system disorders,headache|head ache|cephalalgia|head pain|sirashoola
+VW-T0002,Migraine,Nervous system disorders,migraine|migrainous headache|ardhavabhedaka
+VW-T0003,Dizziness,Nervous system disorders,dizziness|dizzy|light headed|lightheadedness|giddiness|bhrama
+VW-T0004,Syncope,Nervous system disorders,syncope|syncopal|syncopal episode|fainting|faint|blackout|collapse|loss of consciousness
+VW-T0005,Somnolence,Nervous system disorders,somnolence|drowsiness|drowsy|sleepiness|excessive sleep
+VW-T0006,Insomnia,Nervous system disorders,insomnia|sleeplessness|unable to sleep|difficulty sleeping|disturbed sleep|poor sleep|anidra
+VW-T0007,Tremor,Nervous system disorders,tremor|shaking|trembling|kampa
+VW-T0008,Paraesthesia,Nervous system disorders,paraesthesia|paresthesia|tingling|pins and needles|numbness
+VW-T0009,Seizure,Nervous system disorders,seizure|convulsion|fit|apasmara
+VW-T0010,Nausea,Gastrointestinal disorders,nausea|nauseous|feeling sick|queasy|hrillasa
+VW-T0011,Vomiting,Gastrointestinal disorders,vomiting|vomit|emesis|throwing up|chhardi
+VW-T0012,Diarrhoea,Gastrointestinal disorders,diarrhoea|diarrhea|loose stools|loose motion|frequent stools|atisara
+VW-T0013,Constipation,Gastrointestinal disorders,constipation|constipated|hard stools|vibandha
+VW-T0014,Abdominal pain,Gastrointestinal disorders,abdominal pain|stomach pain|stomach ache|belly pain|udarshoola|epigastric pain
+VW-T0015,Dyspepsia,Gastrointestinal disorders,dyspepsia|indigestion|gastric discomfort|heartburn|acidity|amlapitta
+VW-T0016,Flatulence,Gastrointestinal disorders,flatulence|bloating|gas|distension|adhmana
+VW-T0017,Dry mouth,Gastrointestinal disorders,dry mouth|xerostomia|mouth dryness
+VW-T0018,Loss of appetite,Gastrointestinal disorders,loss of appetite|anorexia|reduced appetite|not eating|aruchi
+VW-T0019,Gastrointestinal haemorrhage,Gastrointestinal disorders,gi bleed|gastrointestinal bleeding|blood in stool|melaena|haematemesis
+VW-T0020,Rash,Skin and subcutaneous tissue disorders,rash|skin rash|eruption|skin eruption|maculopapular rash
+VW-T0021,Pruritus,Skin and subcutaneous tissue disorders,pruritus|itching|itch|itchy skin|kandu
+VW-T0022,Urticaria,Skin and subcutaneous tissue disorders,urticaria|hives|wheals|nettle rash|sheetapitta
+VW-T0023,Angioedema,Skin and subcutaneous tissue disorders,angioedema|facial swelling|lip swelling|swelling of face|periorbital swelling
+VW-T0024,Erythema,Skin and subcutaneous tissue disorders,erythema|redness|red skin|skin redness
+VW-T0025,Alopecia,Skin and subcutaneous tissue disorders,alopecia|hair loss|hair fall|khalitya
+VW-T0026,Dry skin,Skin and subcutaneous tissue disorders,dry skin|xerosis|skin dryness|rukshata
+VW-T0027,Photosensitivity reaction,Skin and subcutaneous tissue disorders,photosensitivity|sun sensitivity|sunburn reaction
+VW-T0028,Stevens-Johnson syndrome,Skin and subcutaneous tissue disorders,stevens johnson|sjs|mucocutaneous reaction|skin peeling
+VW-T0029,Hepatic enzyme increased,Hepatobiliary disorders,elevated liver enzymes|raised liver enzymes|transaminitis|deranged lft|raised sgpt|raised alt|raised ast
+VW-T0030,Jaundice,Hepatobiliary disorders,jaundice|icterus|yellow eyes|yellowing of skin|raised bilirubin|kamala
+VW-T0031,Drug-induced liver injury,Hepatobiliary disorders,drug induced liver injury|dili|hepatotoxicity|liver injury|hepatitis
+VW-T0032,Hepatomegaly,Hepatobiliary disorders,hepatomegaly|enlarged liver|liver enlargement
+VW-T0033,Blood creatinine increased,Renal and urinary disorders,raised creatinine|elevated creatinine|deranged renal function|renal impairment
+VW-T0034,Acute kidney injury,Renal and urinary disorders,acute kidney injury|aki|renal failure|acute renal failure
+VW-T0035,Dysuria,Renal and urinary disorders,dysuria|burning micturition|painful urination|mutrakrichra
+VW-T0036,Haematuria,Renal and urinary disorders,haematuria|hematuria|blood in urine
+VW-T0037,Palpitations,Cardiac disorders,palpitations|racing heart|fluttering|awareness of heartbeat|hritdrava
+VW-T0038,Tachycardia,Cardiac disorders,tachycardia|fast heart rate|rapid pulse|raised heart rate
+VW-T0039,Bradycardia,Cardiac disorders,bradycardia|slow heart rate|low pulse
+VW-T0040,Chest pain,Cardiac disorders,chest pain|chest discomfort|chest tightness|hritshoola
+VW-T0041,Myocardial infarction,Cardiac disorders,myocardial infarction|heart attack|mi|acute coronary syndrome
+VW-T0042,Hypertension,Vascular disorders,hypertension|high blood pressure|raised bp|elevated bp
+VW-T0043,Hypotension,Vascular disorders,hypotension|low blood pressure|low bp|postural hypotension
+VW-T0044,Cough,Respiratory thoracic and mediastinal disorders,cough|coughing|dry cough|kasa
+VW-T0045,Dyspnoea,Respiratory thoracic and mediastinal disorders,dyspnoea|dyspnea|breathlessness|shortness of breath|difficulty breathing|shwasa
+VW-T0046,Bronchospasm,Respiratory thoracic and mediastinal disorders,bronchospasm|wheezing|wheeze|chest tightness on breathing
+VW-T0047,Epistaxis,Respiratory thoracic and mediastinal disorders,epistaxis|nosebleed|nasal bleeding|nakshiraghata
+VW-T0048,Arthralgia,Musculoskeletal and connective tissue disorders,arthralgia|joint pain|painful joints|sandhishoola
+VW-T0049,Myalgia,Musculoskeletal and connective tissue disorders,myalgia|muscle pain|body ache|body pain|angamarda
+VW-T0050,Muscle cramps,Musculoskeletal and connective tissue disorders,muscle cramps|cramps|spasm|pindikodveshtana
+VW-T0051,Back pain,Musculoskeletal and connective tissue disorders,back pain|lumbar pain|low back pain|katishoola
+VW-T0052,Joint swelling,Musculoskeletal and connective tissue disorders,joint swelling|swollen joints|sandhishotha
+VW-T0053,Fatigue,General disorders and administration site conditions,fatigue|tiredness|tired|weakness|lethargy|exhaustion|klama
+VW-T0054,Pyrexia,General disorders and administration site conditions,pyrexia|fever|febrile|raised temperature|jwara
+VW-T0055,Oedema peripheral,General disorders and administration site conditions,peripheral oedema|swelling of legs|ankle swelling|pedal oedema|shotha
+VW-T0056,Malaise,General disorders and administration site conditions,malaise|feeling unwell|generally unwell|discomfort
+VW-T0057,Weight increased,Investigations,weight gain|increased weight|gained weight
+VW-T0058,Weight decreased,Investigations,weight loss|decreased weight|lost weight|karshya
+VW-T0059,Blood glucose increased,Investigations,raised blood sugar|hyperglycaemia|hyperglycemia|elevated glucose|high sugar
+VW-T0060,Blood glucose decreased,Investigations,hypoglycaemia|hypoglycemia|low blood sugar|low sugar
+VW-T0061,Anaemia,Blood and lymphatic system disorders,anaemia|anemia|low haemoglobin|low hemoglobin|pandu
+VW-T0062,Thrombocytopenia,Blood and lymphatic system disorders,thrombocytopenia|low platelets|low platelet count
+VW-T0063,Eosinophilia,Blood and lymphatic system disorders,eosinophilia|raised eosinophils|high eosinophil count
+VW-T0064,Hypersensitivity,Immune system disorders,hypersensitivity|allergic reaction|allergy|drug allergy
+VW-T0065,Anaphylactic reaction,Immune system disorders,anaphylaxis|anaphylactic reaction|anaphylactic shock|severe allergic reaction
+VW-T0066,Anxiety,Psychiatric disorders,anxiety|anxious|nervousness|restlessness|chittodvega
+VW-T0067,Depressed mood,Psychiatric disorders,depressed mood|low mood|depression|sadness|vishada
+VW-T0068,Irritability,Psychiatric disorders,irritability|irritable|short tempered|krodha
+VW-T0069,Blurred vision,Eye disorders,blurred vision|blurring of vision|vision blurred|hazy vision|drishtimandya
+VW-T0070,Conjunctivitis,Eye disorders,conjunctivitis|red eye|eye redness|abhishyanda
+VW-T0071,Tinnitus,Ear and labyrinth disorders,tinnitus|ringing in ears|ear ringing|karnanada
+VW-T0072,Vertigo,Ear and labyrinth disorders,vertigo|spinning sensation|room spinning|bhramari
