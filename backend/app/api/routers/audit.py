@@ -1,23 +1,45 @@
 """/api/audit. OWNER: Caleb.
 
 This endpoint is the pitch. Judges will click it and then try to break it.
+
+PHASE 0 PLACEHOLDER — returns seeded events and a hardcoded verify result. Caleb
+replaces both with the real hash chain (backend/app/audit/chain.py).
 """
 
+from fastapi import APIRouter
+from pydantic import BaseModel
 
-def list_audit_events(user, actor=None, role=None, date_from=None, date_to=None):
-    """GET /api/audit -> AuditEvent[], newest first, with before/after values."""
-    raise NotImplementedError
+from contracts.models import AuditEvent
+from ...stubs import loader
+
+router = APIRouter(prefix="/api/audit", tags=["audit"])
 
 
-def verify_chain(user):
-    """GET /api/audit/verify -> {ok: bool, broken_at: int | None}.
+class ChainVerification(BaseModel):
+    """`broken_at` is the sequence number of the first tampered row, or None."""
 
-    Recomputes hash(payload + prev_hash) down the whole chain. Any row mutated
-    out of band makes this return the exact sequence number where it broke.
+    ok: bool
+    checked: int
+    broken_at: int | None = None
+
+
+@router.get("", response_model=list[AuditEvent], summary="Audit trail, newest first")
+def list_audit_events(
+    actor: str | None = None,
+    role: str | None = None,
+) -> list[AuditEvent]:
+    records = loader.load("audit_events")
+    if actor:
+        records = [e for e in records if e["actor_id"] == actor]
+    if role:
+        records = [e for e in records if e["actor_role"] == role]
+    return [AuditEvent(**e) for e in sorted(records, key=lambda e: e["seq"], reverse=True)]
+
+
+@router.get("/verify", response_model=ChainVerification, summary="Verify the hash chain")
+def verify_chain() -> ChainVerification:
+    """PLACEHOLDER: always ok. Caleb: recompute hash(payload + prev_hash) down the chain.
+
+    Pressing this live after tampering with a row is the strongest 15 seconds of the demo.
     """
-    raise NotImplementedError
-
-
-def export_audit(user):
-    """GET /api/audit/export -> CSV. Regulator and admin only. Phase 4."""
-    raise NotImplementedError
+    return ChainVerification(ok=True, checked=len(loader.load("audit_events")), broken_at=None)

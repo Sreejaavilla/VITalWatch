@@ -1,6 +1,17 @@
-"""/api/users. OWNER: Caleb. Admin only."""
+"""/api/users. OWNER: Caleb. Admin only.
+
+PHASE 0 PLACEHOLDER — no role check yet. Caleb adds Depends(require("users", "read")).
+Acceptance: any non-admin role must get 403 here.
+"""
+
+from fastapi import APIRouter
+
+from contracts.models import User
+from ...stubs import loader
+
+router = APIRouter(prefix="/api/users", tags=["users"])
 
 
-def list_users(user):
-    """GET /api/users -> User[]. Any non-admin role gets 403."""
-    raise NotImplementedError
+@router.get("", response_model=list[User], summary="List users (admin only)")
+def list_users() -> list[User]:
+    return [User(**u) for u in loader.load("users")]
