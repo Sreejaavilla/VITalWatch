@@ -40,7 +40,7 @@ Nothing here is optional. After this nobody blocks anybody.
 - [ ] **[Roxy]** `datagen` emits 8 studies + sites + enrolment curves into `contracts/fixtures/`. Verify: `python -m datagen.run --out contracts/fixtures/` produces valid JSON that imports as `contracts.models`. ⛔ blocks: stub mode looking real
 - [ ] **[Sreeja]** `services/pv/terms/` holds ~200 curated PT/LLT rows and ~40 drug rows, CSV, with the `CodingService` interface signature written (not implemented).
 - [ ] **[Ishan]** Next.js on Vercel with routes existing (blank is fine) for: `/login`, `/portfolio`, `/study/[id]`, `/ae`, `/audit`, `/alerts`.
-- [ ] **[Avanthika]** `docs/compliance-matrix.md` has every regulation listed as a row with an empty "where addressed" column. Filling it is Phase 2.
+- [ ] **[Rackshitha]** `docs/compliance-matrix.md` has every regulation listed as a row with an empty "where addressed" column. Filling it is Phase 2.
 
 > ### 🚪 GATE — Hour 2: CONTRACTS FROZEN
 > **Pass:** all 12 models import · openapi.yaml covers all 6 screens · Render `/health` green from the public URL · Supabase login returns a role-bearing JWT.
@@ -64,7 +64,7 @@ Every screen reachable, every endpoint returning fixture data. **Demo-ready at h
 - [ ] **[Ishan]** AE report form posts to `/api/ae` and the audit page renders `/api/audit`. ⛔ blocks: the demo click path
 - [ ] **[Sreeja]** `POST /api/ae` accepts an AE payload and echoes it back with a fake coded term and a computed reporting deadline.
 - [ ] **[Roxy]** `datagen` now produces visits, protocol deviations, data queries, milestones and AEs — enough that the portfolio looks like a real institute, not lorem ipsum.
-- [ ] **[Avanthika]** Demo script v1 written: the exact click path, who narrates which screen, 4 minutes.
+- [ ] **[Rackshitha]** Demo script v1 written: the exact click path, who narrates which screen, 4 minutes.
 
 > ### 🚪 GATE — Hour 6: WALKING SKELETON
 > **Pass:** on the **deployed URLs**, one person clicks login → portfolio → study drill-down → file an AE → see it in the audit log, without a crash.
@@ -99,8 +99,8 @@ Every screen reachable, every endpoint returning fixture data. **Demo-ready at h
 
 ### Everything else
 - [ ] **[Kavin]** `STUB_MODE=false` is the deployed default and the click path still passes end to end. ⛔ blocks: hour 15 gate
-- [ ] **[Avanthika]** `docs/compliance-matrix.md` complete — GCP-ASU, ICMR guidelines, NDCT 2019, CTRI, IEC oversight, DPDP 2023 + 2025 Rules, ALCOA+, ISO 27001, CERT-In, e-signatures, informed consent — each mapped to a screen, an endpoint or an explicit deferral. No blank cells.
-- [ ] **[Avanthika]** Q&A prep doc: the 12 questions judges will actually ask, with answers. Lead with "do you have MedDRA?" and "is this real patient data?"
+- [ ] **[Rackshitha]** `docs/compliance-matrix.md` complete — GCP-ASU, ICMR guidelines, NDCT 2019, CTRI, IEC oversight, DPDP 2023 + 2025 Rules, ALCOA+, ISO 27001, CERT-In, e-signatures, informed consent — each mapped to a screen, an endpoint or an explicit deferral. No blank cells.
+- [ ] **[Rackshitha]** Q&A prep doc: the 12 questions judges will actually ask, with answers. Lead with "do you have MedDRA?" and "is this real patient data?"
 
 > ### 🚪 GATE — Hour 15: FREEZE
 > **Pass:** the click path runs on deployed URLs with `STUB_MODE=false`, RBAC returns correct codes for all 7 roles, and the audit chain verifies.
@@ -113,7 +113,7 @@ Every screen reachable, every endpoint returning fixture data. **Demo-ready at h
 **Hard feature freeze. No new features. This phase is not negotiable and cannot be skipped for "just one more thing".**
 
 - [ ] **[Kavin]** Freeze `main`. Feature work moves to branches that will not be merged before hour 18.
-- [ ] **[Ishan + Avanthika]** **Record the backup demo video** against whatever works at this moment. Screen recording, narrated, 4 minutes, uploaded somewhere playable offline. ⛔ blocks: sleeping soundly
+- [ ] **[Ishan + Rackshitha]** **Record the backup demo video** against whatever works at this moment. Screen recording, narrated, 4 minutes, uploaded somewhere playable offline. ⛔ blocks: sleeping soundly
 - [ ] **[Ishan]** Watch the video back once. If a screen looks broken on camera, that is the only thing anyone fixes before hour 18.
 - [ ] **[Avanthika]** Deck locked. Architecture slide, compliance mapping slide, the deferred-scope slide.
 - [ ] **[Kavin]** Tag the commit the video was recorded from. If Phase 4 breaks anything, this tag is the demo.
@@ -140,7 +140,7 @@ Only whatever survived. Pick from the top of this list, stop when the clock says
 
 - [ ] **[Everyone]** Three clean end-to-end runs on the deployed URL. Not two.
 - [ ] **[Kavin]** Warm the Render instance 10 minutes before pitching — free tier cold-starts take ~50 seconds and that is a lifetime on stage.
-- [ ] **[Avanthika]** Q&A drilling: each person answers three hostile questions about someone else's component.
+- [ ] **[Rackshitha]** Q&A drilling: each person answers three hostile questions about someone else's component.
 - [ ] **[Ishan]** Confirm the backup video plays offline on the presenting laptop with no network.
 - [ ] **[Everyone]** Phones charged, laptop charged, tab layout set, logins already done. Sleep whatever is left.
 
