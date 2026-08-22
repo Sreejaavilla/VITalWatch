@@ -246,7 +246,7 @@ Every screen reachable, every endpoint returning fixture data. **Demo-ready at h
 - [ ] **[Kavin]** Freeze `main`. Feature work moves to branches that will not be merged before hour 18.
 - [ ] **[Ishan + Rackshitha]** **Record the backup demo video** against whatever works at this moment. Screen recording, narrated, 4 minutes, uploaded somewhere playable offline. ⛔ blocks: sleeping soundly
 - [ ] **[Ishan]** Watch the video back once. If a screen looks broken on camera, that is the only thing anyone fixes before hour 18.
-- [ ] **[Avanthika]** Deck locked. Architecture slide, compliance mapping slide, the deferred-scope slide.
+- [ ] **[Rackshitha]** Deck locked. Architecture slide, compliance mapping slide, the deferred-scope slide.
 - [ ] **[Kavin]** Tag the commit the video was recorded from. If Phase 4 breaks anything, this tag is the demo.
 - [ ] **[Caleb]** Rotate any key that got pasted into a chat. Confirm `.env` is not in git: `git log --all --full-history -- '*.env'` returns nothing.
 - [ ] **[Everyone]** Two people sleep 90 minutes, staggered. Q&A performance is a function of sleep.
