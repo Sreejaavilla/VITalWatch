@@ -4,6 +4,127 @@
 Stack: **FastAPI** (Render) · **Next.js** (Vercel) · **Supabase** (Postgres + Auth) · **Sentence Transformers + FAISS** (AE coding)
 Auth: Supabase JWT, RBAC enforced in app layer. RLS written as a design artifact, not a runtime dependency.
 
+
+# What we are solving
+
+**AIIA runs a portfolio of Ayurveda clinical trials and hosts the National Pharmacovigilance
+Coordination Centre for ASU&H drugs. All of it is tracked in disconnected spreadsheets.**
+
+Study status sits in one file, recruitment in another, milestones in a third, data queries in a
+fourth, adverse events in a fifth — each owned by a different person, each updated on a different
+day. Nobody can answer "how is the portfolio doing right now?" without days of manual
+reconciliation, and by the time the answer arrives it is already stale.
+
+Three things break as a result:
+
+1. **Decisions arrive late.** A study falling behind on enrolment is visible only when someone
+   opens the right spreadsheet and does the arithmetic — usually long after it started slipping.
+2. **Regulatory deadlines get missed.** A serious adverse event must reach the Ethics Committee
+   and the licensing authority within 24 hours under the New Drugs and Clinical Trials Rules 2019.
+   A spreadsheet does not start a clock, and it does not chase anyone.
+3. **There is no audit trail.** A spreadsheet cell can be changed by anyone, at any time, leaving
+   no record of who changed it, when, or what it said before. That is a compliance failure on its
+   own terms — ALCOA+ data integrity is not achievable in a file that can be silently edited.
+
+Underneath all three is one missing thing: **a single, real-time, role-based, auditable view of
+the study lifecycle.**
+
+# How we solve it
+
+One system covering the full lifecycle — protocol → Ethics Committee approval → CTRI registration
+→ site activation → screening → enrolment against target → visit and deviation compliance → data
+queries → milestones → close-out — with a pharmacovigilance module attached to it, because AIIA
+hosts the NPvCC and safety reporting is not a separate concern from trial management.
+
+Five mechanisms do the actual work:
+
+| The problem | The mechanism | Where it lives |
+|---|---|---|
+| Status is scattered and stale | One Postgres schema behind one API; every screen computes from the same source | `contracts/`, `backend/app/services/` |
+| Nobody notices a study slipping | A rule engine evaluating configurable thresholds — enrolment lag, EC/CTRI renewal due, monitoring visit overdue — surfaced as ranked alerts that deep-link to the study | `backend/app/services/alerts.py` |
+| Statutory reporting clocks are not tracked | AE/SAE intake that starts a 24-hour and 14-day clock on submission and shows breach status | `services/pv/timelines/` |
+| Free-text AEs cannot be aggregated into signals | Semantic coding of narratives to standard terms, then aggregation by term × study × severity for the DSMB | `services/pv/coding/`, `services/pv/signals/` |
+| Anyone can see or change anything, invisibly | Seven roles resolved from a declarative matrix, plus an append-only hash-chained audit trail where tampering is detectable and locatable | `contracts/roles.yaml`, `backend/app/auth/`, `backend/app/audit/` |
+
+The last row is the technical heart of the pitch. Everything else a spreadsheet could theoretically
+imitate with enough discipline; **an immutable audit trail and enforced role separation are things a
+spreadsheet cannot structurally provide.** That is the argument.
+
+## Two design decisions that shape everything
+
+**Contracts before code.** `contracts/` is written and frozen in the first two hours — the data
+model, the API surface, the RBAC matrix. Six people then build against it in parallel without
+blocking each other. The alternative — everyone inventing their own field names and joining up at
+hour 12 — is the single most common way a hackathon team ships nothing.
+
+**Stub mode is architectural, not a hack.** `STUB_MODE=true` runs the entire system from
+`contracts/fixtures/` with no database, no Supabase, no ML model and no network. It is what Ishan
+develops against from hour 2, and it is the parachute if anything dies on stage. Backend stubs and
+frontend mocks read the *same* fixture files, so the two cannot drift in shape.
+
+# What lives where
+
+Six people, six territories. Ownership maps to directories so that the only file two people would
+otherwise both edit — `backend/app/main.py` — is written once at hour 0 and never touched again.
+
+```
+VITalWatch/
+├─ contracts/              [Kavin]   Shared truth. Frozen hour 2. Everyone imports, nobody forks.
+│  ├─ models/              [Kavin]   12 pydantic models — the data model, single source
+│  ├─ fixtures/            [Roxy]    Canonical fake payloads; stub mode AND frontend mocks read these
+│  ├─ openapi.yaml         [Kavin]   Every endpoint and response shape
+│  └─ roles.yaml           [Caleb]   7 roles × resource × action RBAC matrix
+├─ backend/                          FastAPI service, deploys to Render
+│  ├─ app/main.py          [Kavin]   Router registration — written hour 0, never touched again
+│  ├─ app/config.py        [Kavin]   STUB_MODE and env loading
+│  ├─ app/api/routers/               One file per owner — the anti-merge-conflict device
+│  ├─ app/auth/            [Caleb]   JWT verify, current_user, require_role dependency
+│  ├─ app/audit/           [Caleb]   Hash-chained append-only writer + chain verifier
+│  ├─ app/db/              [Caleb]   schema.sql, rls.sql, seed.sql, Supabase session
+│  ├─ app/services/        [Kavin]   KPI computation, alert rule engine
+│  ├─ app/stubs/           [Kavin]   Fixture-backed responses for STUB_MODE
+│  └─ tests/                         test_<owner>_*.py, one file per owner
+├─ services/pv/            [Sreeja]  Pharmacovigilance — standalone, runs without the backend
+│  ├─ coding/              [Sreeja]  CodingService interface + FAISS/mock implementations
+│  ├─ terms/               [Sreeja]  Curated PT/LLT and drug subset (CSV)
+│  ├─ timelines/           [Sreeja]  NDCT Rules 2019 reporting clocks
+│  └─ signals/             [Sreeja]  AE aggregation for the DSMB view
+├─ datagen/                [Roxy]    Synthetic portfolio generator — standalone, no backend needed
+│  ├─ generators/          [Roxy]    Studies, sites, enrolment curves, visits, deviations, AEs
+│  ├─ cdisc/               [Roxy]    SDTM DM + AE shaping, Define-XML stub, FHIR R4 resources
+│  └─ out/                 [Roxy]    Generated data; one snapshot committed, rest gitignored
+├─ frontend/               [Ishan]   Next.js, deploys to Vercel
+│  ├─ app/                 [Ishan]   login · portfolio · study/[id] · ae · audit · alerts
+│  ├─ components/          [Ishan]   Charts, KPI tiles, tables, alert banners
+│  ├─ lib/                 [Ishan]   Single API client; NEXT_PUBLIC_STUB_MODE flips to mocks/
+│  └─ mocks/               [Ishan]   Generated from contracts/fixtures — never hand-edited
+├─ docs/                   [Avanthika] Deck outline, compliance matrix, architecture, demo script, Q&A
+└─ scripts/                [Kavin]   dev.sh, seed.sh, verify_audit.sh
+```
+
+### Why each top-level directory exists
+
+- **`contracts/`** — the anti-drift device. It sits at the root rather than inside `backend/`
+  because the frontend, the data generator and the PV module all import it too. If a field name
+  changes here, it changes for everyone at once. This is the directory that makes six people
+  working in parallel possible.
+- **`backend/`** — the only thing that talks to the database, and the only place RBAC and audit
+  are enforced. Routers are split one file per owner so merge conflicts are structurally impossible.
+- **`services/pv/`** — a top-level package rather than a backend subfolder, so Sreeja can build,
+  test and demo the whole pharmacovigilance flow with the backend, the database and the frontend
+  all down. Its routers are thin wrappers Kavin can stub if it isn't ready.
+- **`datagen/`** — same reasoning for Roxy. It also carries the CDISC and FHIR shaping logic,
+  because that is data-format work, not API work.
+- **`frontend/`** — one owner, no collisions. `lib/api.ts` is the only file that knows whether a
+  call hits the API or reads mocks; no component fetches directly, which is what keeps stub mode
+  working.
+- **`docs/`** — the compliance matrix, deck and Q&A prep. Deliberately a *document* territory and
+  not a sprint: the ten-plus regulations in the problem statement are answered on paper, and only
+  the four genuinely buildable in 24 hours (audit trail, RBAC, pseudonymisation, reporting
+  timelines) are built.
+- **`scripts/`** — `verify_audit.sh` is a demo prop as much as a tool. Tampering with a row on
+  stage and having the chain name the broken row is the strongest fifteen seconds of the pitch.
+
 ---
 
 ## The one thing that matters
@@ -191,50 +312,3 @@ Each of these is a conscious decision, not an omission.
 - **Real informed-consent capture and e-signature PKI** — consent status is modelled and audited; cryptographic signing infrastructure is a production concern.
 - **21 CFR Part 11 / full validation documentation** — the audit trail meets the ALCOA+ principles it protects; formal computer system validation is a post-pilot activity.
 - **Real patient data** — never, at any stage. The entire portfolio is synthetically generated and the generator is in this repo.
-
----
-
-# Repo layout — one line per directory
-
-```
-VITalWatch/
-├─ contracts/              [Kavin]   Shared truth. Frozen hour 2. Everyone imports, nobody forks.
-│  ├─ models/              [Kavin]   12 pydantic models — the data model, single source
-│  ├─ fixtures/            [Roxy]    Canonical fake payloads; stub mode AND frontend mocks read these
-│  ├─ openapi.yaml         [Kavin]   Every endpoint and response shape
-│  └─ roles.yaml           [Caleb]   7 roles × resource × action RBAC matrix
-├─ backend/                          FastAPI service, deploys to Render
-│  ├─ app/main.py          [Kavin]   Router registration — written hour 0, never touched again
-│  ├─ app/config.py        [Kavin]   STUB_MODE and env loading
-│  ├─ app/api/routers/               One file per owner — the anti-merge-conflict device
-│  ├─ app/auth/            [Caleb]   JWT verify, current_user, require_role dependency
-│  ├─ app/audit/           [Caleb]   Hash-chained append-only writer + chain verifier
-│  ├─ app/db/              [Caleb]   schema.sql, rls.sql, seed.sql, Supabase session
-│  ├─ app/services/        [Kavin]   KPI computation, alert rule engine
-│  ├─ app/stubs/           [Kavin]   Fixture-backed responses for STUB_MODE
-│  └─ tests/                         test_<owner>_*.py, one file per owner
-├─ services/pv/            [Sreeja]  Pharmacovigilance — standalone, runs without the backend
-│  ├─ coding/              [Sreeja]  CodingService interface + FAISS/mock implementations
-│  ├─ terms/               [Sreeja]  Curated PT/LLT and drug subset (CSV)
-│  ├─ timelines/           [Sreeja]  NDCT Rules 2019 reporting clocks
-│  └─ signals/             [Sreeja]  AE aggregation for the DSMB view
-├─ datagen/                [Roxy]    Synthetic portfolio generator — standalone, no backend needed
-│  ├─ generators/          [Roxy]    Studies, sites, enrolment curves, visits, deviations, AEs
-│  ├─ cdisc/               [Roxy]    SDTM DM + AE shaping, Define-XML stub, FHIR R4 resources
-│  └─ out/                 [Roxy]    Generated data; one snapshot committed, rest gitignored
-├─ frontend/               [Ishan]   Next.js, deploys to Vercel
-│  ├─ app/                 [Ishan]   login · portfolio · study/[id] · ae · audit · alerts
-│  ├─ components/          [Ishan]   Charts, KPI tiles, tables, alert banners
-│  ├─ lib/                 [Ishan]   Single API client; NEXT_PUBLIC_STUB_MODE flips to mocks/
-│  └─ mocks/               [Ishan]   Generated from contracts/fixtures — never hand-edited
-├─ docs/                   [Avanthika] Deck outline, compliance matrix, architecture, demo script, Q&A
-└─ scripts/                [Kavin]   dev.sh, seed.sh, verify_audit.sh
-```
-
-## Stub mode — the thing that saves the demo
-
-`STUB_MODE=true` (backend) and `NEXT_PUBLIC_STUB_MODE=true` (frontend) run the entire system on
-`contracts/fixtures/` with **no database, no Supabase, no ML model, no network dependency**.
-
-This is what Ishan develops against from hour 2. It is also the fallback if anything dies on stage.
-Both modes read the same fixture files, so the two can never drift apart in shape — only in freshness.
