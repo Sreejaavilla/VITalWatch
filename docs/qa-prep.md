@@ -51,15 +51,26 @@ And the first line of defence isn't the application at all: `UPDATE` and `DELETE
 
 ### 4. "Where's the role-based access control? The problem statement names seven roles."
 
-**It isn't there, and that was a decision rather than an oversight.** In 24 hours solo I could
-have built a role *switcher* — a dropdown changing what the dashboard shows, enforcing nothing.
-That looks like access control on stage. I'd rather show you no security control than a fake
-one, because a fake one invites exactly the trust it can't honour.
+**The views are built; the enforcement isn't, and the app says so on the page.** There are
+three role dashboards — investigator, pharmacovigilance officer, institutional leadership —
+each answering the one question that role opens the system to ask. They select and reorder the
+same data. They restrict nothing, and every screen stays reachable from every one of them.
 
-What I built instead is the thing RBAC usually exists to support: an audit trail that attributes
-every change and can't be edited. Adding real enforcement is a session and a permission check
-per route — roughly a day, and it doesn't restructure anything, because every mutation already
-flows through one audited path.
+That split is deliberate. The *view* is where the real content is: those three people need
+genuinely different figures, and getting that selection right is a domain judgement, not a
+security feature. The *enforcement* is what I refused to fake — with no authentication there
+is no identity to authorise against, and a switcher presented as access control would invite
+exactly the trust it can't honour. So the page carries the sentence "a view preference, not
+access control" in the switcher itself.
+
+What stands in meanwhile is the thing RBAC usually exists to support: an audit trail that
+attributes every change and can't be edited. Adding real enforcement is a session and a
+permission check per route — roughly a day, and it doesn't restructure anything, because
+every mutation already flows through one audited path.
+
+*(If they push on "seven roles": three lenses cover the three distinct questions. The
+remaining roles in the problem statement are variations on those questions, not a fourth
+kind of question — and I'd rather ship three that are right than seven that are stubs.)*
 
 ### 5. "How is this different from a spreadsheet?"
 

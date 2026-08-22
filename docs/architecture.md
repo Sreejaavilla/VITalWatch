@@ -18,6 +18,7 @@ you can destroy and rebuild on stage is a demo you can give honestly.
         │                               │
         │   main.py    routes, pages    │
         │   kpi.py     computed metrics │
+        │   roles.py   per-role lenses  │
         │   alerts.py  threshold rules  │
         │   pv.py      coding + clocks  │
         │   audit.py   hash chain       │

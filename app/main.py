@@ -25,7 +25,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from . import alerts, audit, fhir, kpi, pv, sdtm, signals
+from . import alerts, audit, fhir, kpi, pv, roles, sdtm, signals
 from .config import settings
 from .db import get_db, init
 from .models import AuditAction, CodingSource, utcnow
@@ -148,6 +148,15 @@ _LABELS = {
     "site_activation": "Site activation",
     "ctri_registered": "CTRI registered",
     "follow_up": "Follow-up",
+    # Alert rules, as the role dashboards name them.
+    "enrolment_lag": "Enrolment lag",
+    "ethics_renewal_due": "EC renewal due",
+    "ctri_update_due": "CTRI update due",
+    "monitoring_visit_overdue": "Monitoring overdue",
+    "sae_timeline_breach": "SAE timeline breach",
+    # Adverse-event outcomes.
+    "not_recovered": "Not recovered",
+    "recovered_with_sequelae": "Recovered with sequelae",
 }
 
 
@@ -286,6 +295,77 @@ def home(request: Request, db: sqlite3.Connection = Depends(get_db)):
 
     return page(request, "home.html", db=db, counts=counts, cards=cards,
                 urgent=urgent, chain=audit.verify(db))
+
+
+@app.get("/role/{role_id}", response_class=HTMLResponse, tags=["pages"])
+def role_view(
+    role_id: str,
+    request: Request,
+    pi: str | None = None,
+    db: sqlite3.Connection = Depends(get_db),
+):
+    """A lens over the same data, selected for one kind of reader.
+
+    Explicitly not access control: every screen stays reachable from every lens, and
+    the page says so. See `app/roles.py` for why that distinction is drawn on the
+    page rather than left for someone to assume.
+    """
+    role = roles.BY_ID.get(role_id)
+    if role is None:
+        raise HTTPException(404, f"No role lens {role_id!r}")
+
+    extra: dict = {}
+    if role_id == "investigator":
+        pis = roles.investigators(db)
+        # An unknown PI in the query string falls back rather than erroring — the same
+        # policy as the audit filters, for the same reason.
+        chosen = pi if pi in pis else (pis[0] if pis else "")
+        extra = {"pis": pis, "chosen_pi": chosen, **roles.investigator(db, chosen)}
+    elif role_id == "safety":
+        extra = roles.safety(db)
+    else:
+        extra = roles.leadership(db)
+
+    return page(request, "role.html", db=db, role=role, all_roles=roles.ROLES, **extra)
+
+
+@app.get("/api/kpi/role/{role_id}", tags=["kpi"])
+def api_role_kpi(
+    role_id: str, pi: str | None = None, db: sqlite3.Connection = Depends(get_db)
+):
+    """The same role metrics as JSON, definitions included.
+
+    The definition travels with the number deliberately: a KPI feed that emits a bare
+    integer leaves every consumer to invent its own meaning for it.
+    """
+    role = roles.BY_ID.get(role_id)
+    if role is None:
+        raise HTTPException(404, f"No role lens {role_id!r}")
+
+    if role_id == "investigator":
+        pis = roles.investigators(db)
+        chosen = pi if pi in pis else (pis[0] if pis else "")
+        data = roles.investigator(db, chosen)
+        scope = chosen
+    else:
+        data = roles.safety(db) if role_id == "safety" else roles.leadership(db)
+        scope = "portfolio"
+
+    return {
+        "role": role.id,
+        "name": role.name,
+        "question": role.question,
+        "scope": scope,
+        "generated_at": utcnow(),
+        "note": "A view preference, not access control. No authentication is implemented.",
+        "metrics": [
+            {
+                "label": m.label, "value": m.value, "sub": m.sub,
+                "tone": m.tone, "definition": m.definition,
+            }
+            for m in data["metrics"]
+        ],
+    }
 
 
 @app.get("/portfolio", response_class=HTMLResponse, tags=["pages"])

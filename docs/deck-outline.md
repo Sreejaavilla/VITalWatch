@@ -63,10 +63,12 @@ Every framework has a status and none is blank.
 
 ### 8 · Deferred scope
 Read as staged delivery, not as missing features. Four items, each with its reason:
-RBAC and authentication, licensed dictionaries, live EDC/ABDM integration, SDTM export.
+Authentication and enforced permissions, licensed dictionaries, live EDC/ABDM integration,
+SDTM beyond `DM`.
 
-Say the RBAC one deliberately: *a presentation-only role switcher would have looked like
-access control and enforced nothing, and a fake security control is worse than an absent one.*
+Say the access-control one deliberately: *the three role dashboards select what each reader
+sees and restrict nothing — the app says "a view preference, not access control" on the
+switcher itself, because a fake security control is worse than an absent one.*
 
 ### 9 · What comes next
 The ordered list from Q&A question 12. Authentication first, because everything else depends on

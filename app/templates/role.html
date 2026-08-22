@@ -1,0 +1,313 @@
+{% extends "base.html" %}
+{% from "_macros.html" import badge, severity_badge, page_head, note, bar %}
+{% block title %}{{ role.name }} — {{ settings.app_name }}{% endblock %}
+
+{% block content %}
+{% call page_head(role.question, role.focus) %}
+  <a href="/api/kpi/role/{{ role.id }}{{ '?pi=' ~ (chosen_pi | urlencode) if role.id == 'investigator' else '' }}"
+     class="btn btn-quiet">JSON</a>
+  <a href="/portfolio" class="btn btn-secondary">Full portfolio →</a>
+{% endcall %}
+
+{# Lens switcher. Deliberately reads as a view control rather than a sign-in: the
+   caption underneath says what it is, because a switcher that looks like access
+   control while enforcing nothing is the dishonest version of this feature. #}
+<div class="panel px-4 py-3">
+  <div class="flex flex-wrap items-center gap-2">
+    <span class="mr-1 text-[11px] font-semibold uppercase tracking-wider text-slate-500">Viewing as</span>
+    {% for r in all_roles %}
+      <a href="/role/{{ r.id }}"
+         class="rounded border px-3 py-1.5 text-[12.5px] transition
+                {% if r.id == role.id %}border-teal-700 bg-teal-700 font-medium text-white
+                {% else %}border-slate-300 bg-white text-slate-600 hover:border-slate-400 hover:text-slate-900{% endif %}">
+        {{ r.name }}
+      </a>
+    {% endfor %}
+
+    {% if role.id == 'investigator' and pis %}
+      <form method="get" action="/role/investigator" class="ml-auto flex items-center gap-2">
+        <label class="text-[11px] uppercase tracking-wider text-slate-500" for="pi">Investigator</label>
+        <select id="pi" name="pi" onchange="this.form.submit()"
+                class="rounded border border-slate-300 px-2.5 py-1.5 text-[13px] focus:border-teal-700 focus:outline-none focus:ring-1 focus:ring-teal-700">
+          {% for p in pis %}
+            <option value="{{ p }}" {{ 'selected' if p == chosen_pi else '' }}>{{ p }}</option>
+          {% endfor %}
+        </select>
+        <noscript><button class="btn btn-secondary">Go</button></noscript>
+      </form>
+    {% endif %}
+  </div>
+  <p class="mt-2 text-[11.5px] leading-relaxed text-slate-500">
+    A view preference, not access control — every screen stays reachable from every lens.
+    Authentication is <a href="/" class="underline hover:text-slate-700">deliberately not built</a>,
+    and this switcher does not pretend otherwise.
+  </p>
+</div>
+
+{# The six figures this reader opens the system for. #}
+{% set tones = {'neutral':'border-slate-200','good':'border-emerald-300','warn':'border-amber-300','bad':'border-red-300'} %}
+<div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+  {% for m in metrics %}
+    {% set body %}
+      <div class="text-[11px] uppercase tracking-wide text-slate-500">{{ m.label }}</div>
+      <div class="mt-1 text-[28px] font-semibold leading-none tabular-nums text-slate-900">{{ m.value }}</div>
+      {% if m.sub %}<div class="mt-1.5 text-[11.5px] leading-relaxed text-slate-500">{{ m.sub }}</div>{% endif %}
+    {% endset %}
+    {% if m.href %}
+      <a href="{{ m.href }}" class="rounded border bg-white p-4 transition hover:border-slate-400 {{ tones[m.tone] }}">{{ body }}</a>
+    {% else %}
+      <div class="rounded border bg-white p-4 {{ tones[m.tone] }}">{{ body }}</div>
+    {% endif %}
+  {% endfor %}
+</div>
+
+{% call note('What each of these figures counts') %}
+  <dl class="space-y-2">
+    {% for m in metrics %}
+      <div>
+        <dt class="font-medium text-slate-800">{{ m.label }}</dt>
+        <dd class="text-slate-600">{{ m.definition }}</dd>
+      </div>
+    {% endfor %}
+  </dl>
+  <p class="mt-3">Computed on request, straight from SQLite — nothing here is cached or
+  stored, so editing a row and refreshing moves the number.</p>
+{% endcall %}
+
+
+{# ------------------------------------------------------------------ investigator #}
+{% if role.id == 'investigator' %}
+
+  {% if alerts %}
+  <section class="mt-6 panel overflow-hidden">
+    <div class="panel-head">
+      <span class="text-sm font-medium text-slate-700">Needs your attention</span>
+      <span class="text-xs text-slate-400">{{ alerts|length }} on your studies</span>
+    </div>
+    <ul class="divide-y divide-slate-100">
+      {% for a in alerts %}
+      <li class="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 text-[13px]">
+        {{ badge(a.severity.value|capitalize, {'critical':'bad','warning':'warn'}.get(a.severity.value,'info')) }}
+        <a href="{{ a.deep_link }}" class="font-medium text-slate-700 hover:text-teal-800">{{ a.study_id }}</a>
+        <span class="text-slate-600">{{ a.message }}</span>
+        <span class="ml-auto text-xs text-slate-400">{{ a.rule.value|label }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+
+  <section class="mt-4 panel overflow-hidden">
+    <div class="panel-head">
+      <span class="text-sm font-medium text-slate-700">My studies</span>
+      <span class="text-xs text-slate-400">{{ scope }}</span>
+    </div>
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>Study</th><th>Status</th>
+          <th>Enrolment against plan</th>
+          <th class="num">Queries</th><th class="num">Open SAEs</th><th>CTRI</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100">
+        {% for row in studies %}
+        {% set s = row.study %}
+        <tr class="hover:bg-slate-50">
+          <td>
+            <a href="/study/{{ s.id }}" class="font-medium text-slate-700 hover:text-teal-800">{{ s.id }}</a>
+            <div class="max-w-sm truncate text-xs text-slate-500">{{ s.title }}</div>
+          </td>
+          <td>{{ badge(s.status|label, 'info') }}</td>
+          <td class="w-64">
+            <div class="flex items-baseline justify-between text-xs text-slate-500">
+              <span class="tabular-nums text-slate-700">{{ s.actual_enrolment }} / {{ s.target_enrolment }}</span>
+              <span class="tabular-nums">plan {{ row.expected }}</span>
+            </div>
+            <div class="mt-1">{{ bar(s.actual_enrolment, s.target_enrolment, row.expected) }}</div>
+          </td>
+          <td class="num text-slate-700">{{ s.open_queries }}</td>
+          <td class="num {{ 'font-medium text-red-700' if s.open_saes else 'text-slate-400' }}">{{ s.open_saes }}</td>
+          <td>
+            {% if s.ctri_number %}
+              <span class="font-mono text-xs text-slate-500">{{ s.ctri_number }}</span>
+            {% else %}
+              {{ badge('Not registered', 'bad') }}
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+        {% if not studies %}
+        <tr><td colspan="6" class="px-4 py-8 text-center text-sm text-slate-400">
+          No studies are recorded against this investigator.
+        </td></tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </section>
+
+  <p class="mt-3 text-[11.5px] leading-relaxed text-slate-500">
+    The tick on each bar is where the enrolment plan says the study should be today. The
+    gap between the fill and the tick is the lag the alert rule measures — not the
+    distance to the final target, which every study is short of until the day it closes.
+  </p>
+
+
+{# ------------------------------------------------------------------------ safety #}
+{% elif role.id == 'safety' %}
+
+  <section class="mt-6 panel overflow-hidden">
+    <div class="panel-head">
+      <span class="text-sm font-medium text-slate-700">Reporting worklist</span>
+      <span class="text-xs text-slate-400">serious events, soonest statutory deadline first</span>
+    </div>
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>24h clock</th><th>Subject</th><th>Narrative as reported</th>
+          <th>Coded term</th><th>Severity</th><th>Causality</th><th>Outcome</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100">
+        {% for e in worklist %}
+        <tr class="{{ 'bg-red-50/50' if e.timeline_status == 'breached' else '' }} hover:bg-slate-50">
+          <td>
+            {% if e.timeline_status == 'breached' %}{{ badge('Breached', 'bad') }}
+            {% elif e.timeline_status == 'due_soon' %}{{ badge('Due soon', 'warn') }}
+            {% else %}{{ badge('On time', 'good') }}{% endif %}
+            <div class="mt-0.5 text-[11px] tabular-nums text-slate-400">{{ e.deadline_24h | dt }}</div>
+          </td>
+          <td>
+            <div class="text-slate-700">{{ e.subject_code }}</div>
+            <a href="/study/{{ e.study_id }}" class="text-xs text-slate-400 hover:text-sky-700">{{ e.study_id }}</a>
+          </td>
+          <td class="max-w-sm text-slate-600">{{ e.narrative }}</td>
+          <td>
+            {% if e.coded_term %}
+              <span class="text-slate-700">{{ e.coded_term }}</span>
+              <span class="block text-xs text-slate-400">{{ e.coded_code }} · {{ e.coding_confidence }}</span>
+            {% else %}{{ badge('Uncoded', 'neutral') }}{% endif %}
+          </td>
+          <td>{{ severity_badge(e.severity) }}</td>
+          <td class="text-xs text-slate-600">{{ e.causality|capitalize }}</td>
+          <td class="text-xs text-slate-600">{{ e.outcome|label }}</td>
+        </tr>
+        {% endfor %}
+        {% if not worklist %}
+        <tr><td colspan="7" class="px-4 py-8 text-center text-sm text-slate-400">
+          No serious adverse events on record.
+        </td></tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </section>
+
+  <section class="mt-4 panel overflow-hidden">
+    <div class="panel-head">
+      <span class="text-sm font-medium text-slate-700">
+        Disproportionality screen
+        {% if signals_total > signals|length %}
+          <span class="ml-1 font-normal text-slate-400">top {{ signals|length }} of {{ signals_total }}</span>
+        {% endif %}
+      </span>
+      <a href="/signals" class="text-xs text-sky-700 hover:underline">Full analysis with contingency tables →</a>
+    </div>
+    <table class="tbl">
+      <thead>
+        <tr>
+          <th>Coded term</th><th>Study</th>
+          <th class="num">Cases</th><th class="num">PRR</th><th>Screen</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-slate-100">
+        {% for s in signals %}
+        <tr class="hover:bg-slate-50">
+          <td>
+            <span class="text-slate-700">{{ s.coded_term }}</span>
+            <span class="block font-mono text-xs text-slate-400">{{ s.coded_code }}</span>
+          </td>
+          <td>
+            <a href="/study/{{ s.study_id }}" class="text-xs text-slate-500 hover:text-sky-700">{{ s.study_id }}</a>
+          </td>
+          <td class="num text-slate-700">{{ s.cases }}</td>
+          <td class="num {{ 'font-medium text-red-700' if s.flagged else 'text-slate-500' }}">
+            {% if s.prr is none %}
+              {# Same wording as /signals: an undefined ratio, not an infinite one. #}
+              <span class="text-xs font-normal text-slate-500">not seen elsewhere</span>
+            {% else %}{{ '%.2f'|format(s.prr) }}×{% endif %}
+          </td>
+          <td>
+            {% if s.flagged %}{{ badge('Above threshold', 'bad') }}
+            {% else %}{{ badge('Below', 'neutral') }}{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <p class="mt-3 text-[11.5px] leading-relaxed text-slate-500">
+    Sub-threshold rows stay visible so the screening criterion can be seen doing its work.
+    A proportional reporting ratio is a triage order for a Data Safety Monitoring Board —
+    it is not an incidence rate and it is not evidence of causation.
+  </p>
+
+
+{# -------------------------------------------------------------------- leadership #}
+{% else %}
+
+  <div class="mt-6 grid gap-4 lg:grid-cols-[1.6fr_1fr]">
+    <section class="panel overflow-hidden">
+      <div class="panel-head">
+        <span class="text-sm font-medium text-slate-700">Portfolio risk register</span>
+        <span class="text-xs text-slate-400">{{ alerts|length }} alerts, most severe first</span>
+      </div>
+      <ul class="divide-y divide-slate-100">
+        {% for a in alerts %}
+        <li class="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 text-[13px]">
+          {{ badge(a.severity.value|capitalize, {'critical':'bad','warning':'warn'}.get(a.severity.value,'info')) }}
+          <a href="{{ a.deep_link }}" class="font-medium text-slate-700 hover:text-teal-800">{{ a.study_id }}</a>
+          <span class="text-slate-600">{{ a.message }}</span>
+          <span class="ml-auto text-xs text-slate-400">{{ a.rule.value|label }}</span>
+        </li>
+        {% endfor %}
+        {% if not alerts %}
+        <li class="px-4 py-8 text-center text-sm text-slate-400">No rule is currently raising an alert.</li>
+        {% endif %}
+      </ul>
+    </section>
+
+    <section class="panel p-5">
+      <h2 class="text-[13px] font-semibold text-slate-700">Inspection readiness</h2>
+      <dl class="mt-3 space-y-3">
+        {% for label, value, href, definition in posture %}
+        <div>
+          <div class="flex items-baseline justify-between gap-3">
+            <dt class="text-[12.5px] text-slate-700">
+              <a href="{{ href }}" class="hover:text-teal-800 hover:underline">{{ label }}</a>
+            </dt>
+            <dd class="text-[14px] font-semibold tabular-nums text-slate-900">{{ value }}</dd>
+          </div>
+          <p class="mt-0.5 text-[11px] leading-relaxed text-slate-500">{{ definition }}</p>
+        </div>
+        {% endfor %}
+      </dl>
+      <p class="mt-4 border-t border-slate-200 pt-3 text-[11.5px] leading-relaxed
+                {{ 'text-emerald-700' if chain.ok else 'text-red-700' }}">
+        {% if chain.ok %}
+          Chain verified across all {{ chain.count }} events at the moment this page rendered.
+        {% else %}
+          Chain broken at sequence {{ chain.seq }} — {{ chain.error }}
+        {% endif %}
+      </p>
+    </section>
+  </div>
+
+  <p class="mt-3 text-[11.5px] leading-relaxed text-slate-500">
+    Alert thresholds are read from the environment rather than compiled in, so this
+    register is tuned by changing configuration and restarting — not by editing rules.
+  </p>
+
+{% endif %}
+
+{% endblock %}

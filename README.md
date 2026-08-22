@@ -76,7 +76,8 @@ sqlite3 data/ctms.db "UPDATE audit_events SET after_json='{}' WHERE seq=3;"
 
 ## Not built, deliberately
 
-Authentication and role-based access control; licensed dictionaries; live EDC / HIS / ABDM
+Authentication and enforced permissions (three role *views* exist at `/role/{id}` and
+restrict nothing); licensed dictionaries; live EDC / HIS / ABDM
 exchange (the FHIR resource shapes exist, a counterparty does not); SDTM beyond the `DM`
 domain; PostgreSQL. Each is a scoping decision with a stated reason in
 [`docs/compliance-matrix.md`](./docs/compliance-matrix.md) — nothing in this repository claims a

@@ -131,6 +131,31 @@ def run_once(run_no: int) -> list[str]:
         check("Pruritus still tops the ranking after filing",
               (sig[0]["study_id"], sig[0]["coded_term"]), ("STU-004", "Pruritus"))
 
+        # ---- role lenses: the same figures, selected for three different readers
+        for rid in ("investigator", "safety", "leadership"):
+            k = c.get(f"/api/kpi/role/{rid}").json()
+            check(f"{rid} lens returns six metrics", len(k["metrics"]), 6)
+            check(f"{rid} lens defines every metric",
+                  all(m["definition"] for m in k["metrics"]))
+            page = c.get(f"/role/{rid}")
+            check(f"{rid} lens states it is not access control",
+                  "not access control" in page.text)
+
+        # A non-zero count beside a subtitle saying there is nothing is the failure this
+        # guards: the one flagged signal has an undefined PRR, which an ordering by PRR
+        # alone silently drops.
+        sig_metric = next(m for m in c.get("/api/kpi/role/safety").json()["metrics"]
+                          if m["label"] == "Signals above threshold")
+        check("safety lens counts the flagged signal", sig_metric["value"], "1")
+        check("safety lens names it rather than reporting nothing",
+              "Pruritus" in (sig_metric["sub"] or ""))
+
+        # Scoped to a real PI, not the whole portfolio wearing a different heading.
+        inv = c.get("/api/kpi/role/investigator?pi=Dr.+V.+Sharma").json()
+        check("investigator lens scopes to the PI asked for", inv["scope"], "Dr. V. Sharma")
+        check("unknown PI falls back rather than erroring",
+              c.get("/role/investigator?pi=nobody").status_code, 200)
+
         # ---- beat 5: audit
         after = c.get("/api/audit/verify").json()
         check("chain intact after filing, 9 events", after["ok"] and after["count"] == 9)
@@ -152,7 +177,9 @@ def run_once(run_no: int) -> list[str]:
         # ---- every route a judge might click
         for path in ("/", "/portfolio", "/study/STU-004", "/ae", "/signals", "/audit",
                      "/health", "/docs", "/api/fhir/ResearchStudy/STU-001",
-                     "/api/export/sdtm/dm.csv"):
+                     "/api/export/sdtm/dm.csv",
+                     "/role/investigator", "/role/safety", "/role/leadership",
+                     "/api/kpi/role/leadership"):
             check(f"route {path}", c.get(path).status_code, 200)
 
     return check.failures

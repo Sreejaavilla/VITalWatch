@@ -26,8 +26,8 @@ beat 2 entirely. **Never cut beat 6.**
 
 ### Say these before you are asked
 - **"That's not MedDRA"** — beat 3, unprompted. 72 terms we wrote, `source: curated` on screen.
-- **"No authentication, and that was a decision"** — half a sentence, early. A fake role
-  switcher would be worse than none.
+- **"No authentication, and that was a decision"** — half a sentence, early. The three role
+  dashboards select what you see; they enforce nothing, and the page says so.
 - **"Every record is synthetic"** — the close.
 
 ### The three numbers not to fumble

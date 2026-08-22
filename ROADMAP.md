@@ -257,10 +257,15 @@ The parts judges probe.
 
 Only what survives. Top of the list first, stop when the clock says so.
 
-- [ ] ~~**"View as" role selector**~~ — **cut, on your standing "no roles" instruction.**
-  `docs/qa-prep.md` Q4 answers the seven-roles question directly instead: a presentation-only
-  switcher would look like access control while enforcing nothing, and a fake security control is
-  worse than an absent one. Building it now would contradict the answer we give on stage.
+- [x] **Role-based KPI dashboards** — **uncut and built, on your later instruction.**
+  *(`app/roles.py` + `/role/{investigator,safety,leadership}`, plus `/api/kpi/role/{id}`.
+  Three lenses over the same data, six metrics each, every metric carrying the definition of
+  what it counts. The investigator lens scopes to a real `pi_name` rather than showing the
+  whole portfolio under a different heading.)*
+  The original objection is answered rather than ignored: what was refused was a switcher that
+  **looks like access control while enforcing nothing**. These restrict nothing and say so — the
+  switcher itself carries the line "a view preference, not access control", and every screen
+  stays reachable from every lens. `docs/qa-prep.md` Q4 was rewritten to draw that same line.
 - [x] DSMB signal view: AE counts by coded term × study × severity, ranked.
   *(`app/signals.py` + `/signals`. Proportional reporting ratio with the 2×2 contingency shown,
   screening at PRR ≥ 2 with ≥ 3 cases. The page deliberately shows sub-threshold rows — the
@@ -315,7 +320,7 @@ Only what survives. Top of the list first, stop when the clock says so.
 1. **FHIR endpoint** — one slide covers it if unbuilt.
 2. **SDTM export** — becomes an architecture claim instead of a download.
 3. **Audit log filters** — the raw chronological list is enough.
-4. **"View as" role selector** — falls back to a roles slide.
+4. **Role dashboards** — fall back to the portfolio page; the lens is a framing, not a number.
 5. **DSMB signal view** — the AE list alone shows pharmacovigilance working.
 6. **Alert rules 2 and 3** — enrolment lag alone proves the concept.
 7. **Deployment** — demo from localhost. "Cloud-based" becomes an architecture claim; every
@@ -357,8 +362,10 @@ one coding function, so a licensed dictionary is a drop-in swap.
 exist at a hackathon. Interoperability is shown structurally with FHIR R4-shaped resources.
 - **PostgreSQL and multi-user deployment** — SQLite with data access behind one module; the swap
 is a config change. Correct for a single-node demo, explicitly not the production posture.
-- **Enforced role-based access control** — seven roles are modelled and presented; authentication
-and server-side enforcement are the first thing built after the hackathon.
+- **Enforced role-based access control** — three role *views* are built (`/role/{id}`) and
+restrict nothing; authentication and server-side enforcement are the first thing built after
+the hackathon. The views are a domain judgement about what each reader needs; the enforcement
+is a security control, and only the second one is deferred.
 - **ISO/IEC 27001 and CERT-In hosting** — a procurement and audit outcome, not a code artifact.
 - **Full SDTM/ADaM submission package** — one domain demonstrates the pattern; completeness is a
 data-management exercise measured in weeks.

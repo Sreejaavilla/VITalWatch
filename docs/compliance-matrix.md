@@ -32,7 +32,8 @@ Three honest statuses:
 | **ALCOA+** | Attributable, Legible, Contemporaneous, Original, Accurate (+ complete, consistent, enduring, available) | See the ALCOA+ table below | **Built** |
 | **Audit trail** | Immutable, time-stamped, before-and-after, attributable | `app/audit.py` — SHA-256 hash chain, `hash = sha256(canonical_json(payload) + prev_hash)`, gapless sequence; `/audit` with a **Verify chain** button that names the first broken row | **Built** |
 | **Tamper evidence at the storage layer** | The guarantee must not depend on the application behaving | `BEFORE UPDATE` and `BEFORE DELETE` triggers on `audit_events` raising `RAISE(ABORT, …)` — a direct `UPDATE` from the `sqlite3` shell is rejected | **Built** |
-| **Role-based access control** | Distinct views and permissions per role | Not present. The problem statement names seven roles; this build has no authentication and no roles at all | **Deferred** — see the note below |
+| **Role-based views** | Each role sees the figures its job depends on | `app/roles.py` — three lenses (investigator, pharmacovigilance officer, institutional leadership) at `/role/{id}`, six defined metrics each, also served as JSON at `/api/kpi/role/{id}` | **Built** |
+| **Role-based access control** | Distinct *permissions* per role, enforced | Not present. The lenses above select what is shown; they restrict nothing, and every screen stays reachable from every one of them. No authentication exists to enforce against | **Deferred** — see the note below |
 | **Electronic signatures** | Signed approvals carrying identity, intent and timestamp | Not built. The audit chain is the natural place to anchor one — a signature is an audit event with an intent field and a key | **Deferred** |
 | **ISO/IEC 27001** | Information security management system | A certification of an organisation and its processes, awarded after audit. Not a property of source code | **Deferred** — hosting and procurement decision, stated as such on the architecture slide |
 | **CERT-In directions** | Log retention, incident reporting timelines, time synchronisation | Log retention is structurally satisfied by an append-only audit trail; the reporting obligations are operational | **Deferred** — same reason |
@@ -72,14 +73,21 @@ This is the one a domain judge will actually push on, so it gets its own table.
 
 Two of these are worth being able to say out loud without flinching.
 
-**Role-based access control.** The problem statement names seven roles, and this build has
-none — no authentication, no authorisation, no enforcement. The reason is a scoping decision:
-in the time available, a *presentation-only* role switcher would have looked like access
-control while enforcing nothing, and a fake security control is worse than an absent one,
-because it invites trust it cannot honour. What exists instead is the thing RBAC is usually
-built to support — an audit trail that attributes every change and cannot be edited. Adding
-enforcement means adding a session and a permission check at each route; it does not mean
-restructuring anything.
+**Role-based access control.** Three role *views* are built and one *permission* is not.
+The distinction is the whole point, and the application states it on every role page rather
+than leaving it to be assumed: switching lens changes what is shown first, never what is
+permitted, and every screen stays reachable from every lens.
+
+The views are the part that carries real information — an investigator, a safety officer and
+an institutional administrator genuinely need different figures from the same database, and
+`app/roles.py` selects them with the definition of each figure attached. The enforcement is
+the part deliberately not faked: with no authentication there is no identity to authorise, and
+a switcher presented *as* access control would invite exactly the trust it cannot honour.
+
+What stands in for enforcement meanwhile is the thing RBAC is usually built to support — an
+audit trail that attributes every change and cannot be edited. Adding enforcement means adding
+a session and a permission check at each route; it does not mean restructuring anything,
+because every mutation already flows through one audited path.
 
 **MedDRA.** Say this before you are asked. The terms are ours, the file is in the repository,
 and the interface is the part that carries over.

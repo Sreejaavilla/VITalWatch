@@ -154,6 +154,27 @@ sqlite3 data/ctms.db "DROP TRIGGER audit_events_no_update;
 
 ---
 
+## Not a beat — the answer to "who actually uses this?"
+
+Do **not** work this into the four minutes. It is the reply when a judge asks who the system
+is for, and it is stronger as an answer than as a demo step.
+
+**Click `Investigator` in the left rail**, then step across the three tabs.
+
+> "Three people open this and ask three different questions. An investigator asks whether
+> their trial is slipping — so that lens is scoped to one principal investigator and leads
+> with enrolment against plan. A safety officer asks whether anything needs investigating
+> today — that one leads with the statutory clock. Leadership asks whether the institution is
+> audit-ready — that one leads with the risk register and the chain status.
+>
+> Same database, same numbers, different selection. And read the line under the switcher:
+> *a view preference, not access control.* There's no authentication behind this, so it
+> restricts nothing and every screen stays reachable from every lens. I'd rather show you no
+> security control than one that looks real and enforces nothing."
+
+If they push on the seven roles in the problem statement, that is **Q&A question 4** — three
+lenses cover the three distinct questions; the rest are variations on those.
+
 ## Timing
 
 | Beat | Target | Cumulative |
