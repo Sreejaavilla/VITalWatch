@@ -9,7 +9,7 @@
     'warn':    'border-amber-300',
     'bad':     'border-red-300'
   } %}
-  <div class="rounded-lg border bg-white p-4 {{ tones[tone] }}">
+  <div class="rounded border bg-white p-4 {{ tones[tone] }}">
     <div class="text-xs uppercase tracking-wide text-slate-500">{{ label }}</div>
     <div class="mt-1 text-3xl font-semibold tabular-nums text-slate-900">{{ value }}</div>
     {% if sub %}<div class="mt-0.5 text-xs text-slate-500">{{ sub }}</div>{% endif %}
@@ -43,4 +43,34 @@
            title="Plan to date: {{ expected }}"></div>
     {% endif %}
   </div>
+{% endmacro %}
+
+
+{# The page header. Every screen uses this, so the title, the subtitle and the actions
+   land in the same place on all of them — the thing you notice only when it is absent.
+   Invoke with {% call page_head(...) %}<buttons>{% endcall %}; actions are optional. #}
+{% macro page_head(title, subtitle=None, back=None, back_label=None) %}
+  <div class="mb-5 border-b border-slate-200 pb-4">
+    {% if back %}
+      <a href="{{ back }}" class="text-xs text-slate-500 hover:text-slate-800">← {{ back_label or 'Back' }}</a>
+    {% endif %}
+    <div class="{{ 'mt-1' if back else '' }} flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
+      <div class="min-w-0">
+        <h1 class="text-[19px] font-semibold leading-tight tracking-tight text-slate-900">{{ title }}</h1>
+        {% if subtitle %}<p class="mt-1 max-w-3xl text-[13px] leading-relaxed text-slate-500">{{ subtitle }}</p>{% endif %}
+      </div>
+      {% if caller is defined %}
+        <div class="flex shrink-0 items-center gap-2">{{ caller() }}</div>
+      {% endif %}
+    </div>
+  </div>
+{% endmacro %}
+
+{# Collapsed explanation. The reasoning stays available without the page lecturing
+   everyone who opens it. #}
+{% macro note(summary) %}
+  <details class="note mt-3">
+    <summary>{{ summary }}</summary>
+    <div class="note-body">{{ caller() }}</div>
+  </details>
 {% endmacro %}

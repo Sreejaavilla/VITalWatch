@@ -5,50 +5,56 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}{{ settings.app_name }}{% endblock %}</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root { font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+  </style>
   <link rel="stylesheet" href="/static/app.css">
 </head>
-<body class="h-full bg-slate-50 text-slate-800 antialiased">
+<body class="h-full bg-slate-100/70 text-slate-800 antialiased">
 
-<header class="bg-slate-900 text-white">
-  <div class="mx-auto max-w-7xl px-6 py-4 flex items-center gap-8">
-    <a href="/" class="flex items-baseline gap-2">
-      <span class="text-lg font-semibold tracking-tight">{{ settings.app_name }}</span>
-      <span class="text-xs text-slate-400">{{ settings.org_name }}</span>
+<header class="border-b border-slate-800 bg-slate-900 text-white">
+  <div class="mx-auto flex max-w-[1400px] items-center gap-10 px-6">
+    <a href="/" class="flex items-center gap-2.5 py-3">
+      <span class="grid h-7 w-7 place-items-center rounded bg-teal-400 text-[13px] font-semibold text-slate-900">V</span>
+      <span class="leading-tight">
+        <span class="block text-[15px] font-semibold tracking-tight">{{ settings.app_name }}</span>
+        <span class="block text-[10.5px] uppercase tracking-wider text-slate-400">{{ settings.org_name }}</span>
+      </span>
     </a>
-    <nav class="ml-auto flex items-center gap-1 text-sm">
+
+    <nav class="flex items-center gap-6 self-end">
       {% for href, label in [
         ('/portfolio', 'Portfolio'),
         ('/ae', 'Adverse events'),
         ('/signals', 'Safety signals'),
         ('/audit', 'Audit trail')
       ] %}
-        <a href="{{ href }}"
-           class="rounded px-3 py-1.5 transition
-                  {% if request.url.path.startswith(href) %}bg-white/15 text-white
-                  {% else %}text-slate-300 hover:bg-white/10 hover:text-white{% endif %}">
-          {{ label }}
-        </a>
+        <a href="{{ href }}" class="tab {{ 'tab-on' if request.url.path.startswith(href) }}">{{ label }}</a>
       {% endfor %}
-      <a href="/docs" class="ml-2 rounded px-3 py-1.5 text-slate-400 hover:text-white">API</a>
     </nav>
+
+    <div class="ml-auto flex items-center gap-4 self-center text-[11px]">
+      <span class="hidden items-center gap-1.5 text-slate-400 lg:flex">
+        <span class="h-1.5 w-1.5 rounded-full bg-amber-400"></span>
+        Synthetic data
+      </span>
+      <a href="/docs" class="text-slate-400 hover:text-white">API</a>
+    </div>
   </div>
 </header>
 
-<main class="mx-auto max-w-7xl px-6 py-8">
+<main class="mx-auto max-w-[1400px] px-6 py-6">
   {% block content %}{% endblock %}
 </main>
 
-<footer class="mt-16 border-t border-slate-200 bg-white">
-  <div class="mx-auto max-w-7xl px-6 py-5 text-xs leading-relaxed text-slate-500">
-    <p>
-      <span class="font-medium text-slate-700">All data shown is synthetic.</span>
-      No real participant, trial, or institutional record is present in this system.
-      Subjects are identified by pseudonymous codes only, in line with the DPDP Act 2023.
-    </p>
-    <p class="mt-1">
-      Adverse-event terms are coded against a curated demonstration vocabulary.
-      MedDRA and WHODrug are licensed dictionaries and are not used in this build.
-    </p>
+<footer class="mt-12 border-t border-slate-200 bg-white">
+  <div class="mx-auto flex max-w-[1400px] flex-wrap gap-x-8 gap-y-1 px-6 py-4 text-[11px] text-slate-500">
+    <span>{{ settings.app_name }} — demonstration system</span>
+    <span>Synthetic records only. Subjects carry pseudonymous codes; no participant is identifiable.</span>
+    <span>AE terms coded against a curated vocabulary — not MedDRA or WHODrug.</span>
   </div>
 </footer>
 

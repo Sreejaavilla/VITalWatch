@@ -105,8 +105,34 @@ def _parse_date(value: str | None) -> date | None:
         return None
 
 
+#: Enum values are snake_case; naive prettifying turns `ec_approval` into "Ec approval"
+#: and `fifty_pct_enrolled` into "Fifty pct enrolled". Domain acronyms are the whole
+#: vocabulary of this screen, so they get spelled the way the domain spells them.
+_LABELS = {
+    "ec_approval": "EC approval",
+    "ctri_registration": "CTRI registration",
+    "fifty_pct_enrolled": "50% enrolled",
+    "first_site_activated": "First site activated",
+    "first_subject_in": "First subject in",
+    "last_subject_in": "Last subject in",
+    "database_lock": "Database lock",
+    "close_out": "Close-out",
+    "site_activation": "Site activation",
+    "ctri_registered": "CTRI registered",
+    "follow_up": "Follow-up",
+}
+
+
+def _label(value: str | None) -> str:
+    """A snake_case enum value as a human label, acronyms intact."""
+    if not value:
+        return "—"
+    return _LABELS.get(value, value.replace("_", " ").capitalize())
+
+
 templates.env.filters["dt"] = _fmt_dt
 templates.env.filters["d"] = _fmt_date
+templates.env.filters["label"] = _label
 
 
 # --------------------------------------------------------------------------- api

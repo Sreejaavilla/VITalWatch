@@ -1,27 +1,15 @@
 {% extends "base.html" %}
-{% from "_macros.html" import badge %}
+{% from "_macros.html" import badge, page_head, note %}
 {% block title %}Audit trail — {{ settings.app_name }}{% endblock %}
 
 {% block content %}
-<div class="flex items-baseline justify-between">
-  <div>
-    <h1 class="text-2xl font-semibold tracking-tight text-slate-900">Audit trail</h1>
-    <p class="mt-1 text-sm text-slate-500">
-      Every change, in order, with what the record looked like before and after.
-      Each row commits to the hash of the row before it, so the log can be proved
-      unaltered rather than merely asserted to be.
-    </p>
-  </div>
-  <div class="flex shrink-0 items-center gap-3">
-    <a href="/api/audit/verify" class="text-xs text-slate-400 hover:text-slate-600">as JSON →</a>
-    <a href="/audit?verify=1"
-       class="rounded bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700">
-      Verify chain
-    </a>
-  </div>
-</div>
+{% call page_head('Audit trail',
+        'Every change in sequence, with before and after state. Each entry commits to the hash of the one before it.') %}
+  <a href="/api/audit/verify" class="btn btn-quiet">JSON</a>
+  <a href="/audit?verify=1" class="btn btn-primary">Verify chain</a>
+{% endcall %}
 
-<div class="mt-6 rounded-lg border p-4 text-sm
+<div class="rounded border p-3 text-[13px]
             {% if chain.ok %}border-emerald-200 bg-emerald-50 text-emerald-900
             {% else %}border-red-200 bg-red-50 text-red-900{% endif %}">
   {% if chain.ok %}
@@ -43,10 +31,10 @@
 </div>
 
 <form method="get" action="/audit"
-      class="mt-6 flex flex-wrap items-end gap-3 rounded-lg border border-slate-200 bg-white p-4">
+      class="mt-6 flex flex-wrap items-end gap-3 panel p-4">
   <label class="block text-sm">
     <span class="text-xs text-slate-500">Actor</span>
-    <select name="actor" class="mt-1 rounded border border-slate-300 px-3 py-1.5 text-sm">
+    <select name="actor" class="mt-1 rounded border border-slate-300 px-2.5 py-1.5 text-[13px] focus:border-teal-700 focus:outline-none focus:ring-1 focus:ring-teal-700">
       <option value="">Anyone</option>
       {% for a in actors %}
         <option value="{{ a }}" {{ 'selected' if a == actor else '' }}>{{ a }}</option>
@@ -56,31 +44,25 @@
   <label class="block text-sm">
     <span class="text-xs text-slate-500">From</span>
     <input type="date" name="date_from" value="{{ date_from or '' }}"
-           class="mt-1 rounded border border-slate-300 px-3 py-1.5 text-sm">
+           class="mt-1 rounded border border-slate-300 px-2.5 py-1.5 text-[13px] focus:border-teal-700 focus:outline-none focus:ring-1 focus:ring-teal-700">
   </label>
   <label class="block text-sm">
     <span class="text-xs text-slate-500">To</span>
     <input type="date" name="date_to" value="{{ date_to or '' }}"
-           class="mt-1 rounded border border-slate-300 px-3 py-1.5 text-sm">
+           class="mt-1 rounded border border-slate-300 px-2.5 py-1.5 text-[13px] focus:border-teal-700 focus:outline-none focus:ring-1 focus:ring-teal-700">
   </label>
-  <button type="submit"
-          class="rounded border border-slate-300 px-4 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50">
-    Filter
-  </button>
+  <button type="submit" class="btn btn-secondary">Filter</button>
   {% if filtered %}
     <a href="/audit" class="py-1.5 text-sm text-sky-700 hover:underline">clear</a>
   {% endif %}
   {% if filter_error %}
     <span class="w-full text-xs text-amber-700">{{ filter_error }}</span>
   {% endif %}
-  <span class="ml-auto max-w-sm text-xs leading-relaxed text-slate-400">
-    Filtering narrows what is displayed. It never narrows what is verified — the chain
-    above is always walked in full.
-  </span>
+  <span class="ml-auto text-xs text-slate-400">Filters the view only — verification always walks the full chain.</span>
 </form>
 
-<div class="mt-4 overflow-hidden rounded-lg border border-slate-200 bg-white">
-  <div class="flex items-baseline justify-between border-b border-slate-200 px-4 py-3">
+<div class="mt-4 panel overflow-hidden">
+  <div class="panel-head">
     <span class="text-sm font-medium text-slate-700">
       {% if filtered %}
         {{ matched }} of {{ total }} event{{ '' if total == 1 else 's' }}
@@ -92,32 +74,32 @@
       <span class="text-xs text-slate-400">showing the {{ events|length }} most recent</span>
     {% endif %}
   </div>
-  <table class="w-full text-sm">
-    <thead class="border-b border-slate-200 bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500">
+  <table class="tbl">
+    <thead>
       <tr>
-        <th class="px-4 py-3 font-medium text-right">Seq</th>
-        <th class="px-4 py-3 font-medium">Timestamp (UTC)</th>
-        <th class="px-4 py-3 font-medium">Actor</th>
-        <th class="px-4 py-3 font-medium">Action</th>
-        <th class="px-4 py-3 font-medium">Resource</th>
-        <th class="px-4 py-3 font-medium">Before → after</th>
-        <th class="px-4 py-3 font-medium">Hash</th>
+        <th class="num">Seq</th>
+        <th>Timestamp (UTC)</th>
+        <th>Actor</th>
+        <th>Action</th>
+        <th>Resource</th>
+        <th>Before → after</th>
+        <th>Hash</th>
       </tr>
     </thead>
     <tbody class="divide-y divide-slate-100">
       {% for e in events %}
       <tr class="align-top hover:bg-slate-50">
-        <td class="px-4 py-3 text-right tabular-nums text-slate-400">{{ e.seq }}</td>
-        <td class="px-4 py-3 text-xs tabular-nums text-slate-600">{{ e.timestamp_utc | dt }}</td>
-        <td class="px-4 py-3 text-slate-700">{{ e.actor }}</td>
-        <td class="px-4 py-3">
+        <td class="text-right tabular-nums text-slate-400">{{ e.seq }}</td>
+        <td class="text-xs tabular-nums text-slate-600">{{ e.timestamp_utc | dt }}</td>
+        <td class="text-slate-700">{{ e.actor }}</td>
+        <td>
           {{ badge(e.action|capitalize, {'create':'good','delete':'bad','update':'info'}.get(e.action, 'neutral')) }}
         </td>
-        <td class="px-4 py-3">
-          <div class="text-slate-700">{{ e.resource_type.replace('_',' ') }}</div>
+        <td>
+          <div class="text-slate-700">{{ e.resource_type|label }}</div>
           <div class="font-mono text-xs text-slate-400">{{ e.resource_id or '—' }}</div>
         </td>
-        <td class="px-4 py-3">
+        <td>
           {% if e.before_json or e.after_json %}
           <details>
             <summary class="cursor-pointer text-xs text-sky-700 hover:underline">
@@ -126,6 +108,9 @@
               {% else %}removed{% endif %}
             </summary>
             <div class="mt-2 space-y-2">
+              {% if e.reason %}
+                <div class="text-xs italic text-slate-500">{{ e.reason }}</div>
+              {% endif %}
               {% if e.before_json %}
               <div>
                 <div class="text-xs font-medium text-slate-500">before</div>
@@ -143,9 +128,9 @@
           {% else %}
             <span class="text-xs text-slate-400">—</span>
           {% endif %}
-          {% if e.reason %}<div class="mt-1 text-xs italic text-slate-400">{{ e.reason }}</div>{% endif %}
+
         </td>
-        <td class="px-4 py-3 font-mono text-xs text-slate-400" title="{{ e.hash }}">
+        <td class="font-mono text-xs text-slate-400" title="{{ e.hash }}">
           {{ e.hash[:10] }}…
           <div class="text-slate-300" title="{{ e.prev_hash }}">← {{ e.prev_hash[:10] }}…</div>
         </td>
@@ -160,9 +145,10 @@
   </table>
 </div>
 
-<p class="mt-4 text-xs text-slate-500">
-  This table has no edit or delete control, and neither does the database: UPDATE and
-  DELETE on <code class="font-mono">audit_events</code> raise at the storage layer, so
-  the guarantee does not depend on the application behaving.
-</p>
+{% call note('How immutability is enforced') %}
+  <p>This table has no edit or delete control, and neither does the database: UPDATE and DELETE
+  on <code class="font-mono">audit_events</code> raise at the storage layer, so the guarantee
+  does not depend on the application behaving.</p>
+{% endcall %}
+
 {% endblock %}
