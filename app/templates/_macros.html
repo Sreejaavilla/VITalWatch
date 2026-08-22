@@ -1,3 +1,11 @@
+{% macro nav_link(href, label, request, badge=None) %}
+  {% set on = request.url.path == href or (href != '/' and request.url.path.startswith(href)) %}
+  <a href="{{ href }}" class="nav-link {{ 'nav-on' if on }}">
+    <span class="truncate">{{ label }}</span>
+    {% if badge %}<span class="nav-badge">{{ badge }}</span>{% endif %}
+  </a>
+{% endmacro %}
+
 {# Shared display pieces. Kept here so a badge means the same thing on every screen —
    an inconsistent severity colour is the kind of thing a judge notices and a demo
    cannot explain away. #}

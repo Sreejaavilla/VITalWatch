@@ -13,7 +13,7 @@ turns a hole into a decision.
 ## Pre-flight — 10 minutes before
 
 - [ ] `./scripts/seed.sh` then `./scripts/run.sh`, and load every screen once so nothing is cold
-- [ ] `http://localhost:8000/portfolio` open; `/ae`, `/signals` and `/audit` in tabs 2–4
+- [ ] `http://localhost:8000/` open; `/portfolio`, `/ae`, `/signals` and `/audit` in tabs 2–5
 - [ ] `./scripts/deploy_check.sh` green — 13 endpoints, and it warms every page
 - [ ] A terminal on screen 2, already `cd`'d into the repo, with the tamper commands **typed but
       not entered** (see beat 6)
@@ -27,8 +27,19 @@ portfolio from the generator in about two seconds. Every number comes back ident
 
 ## The path
 
+### 0 · Overview — 15 seconds *(optional opener)*
+**Open `/`.**
+
+> "This is VITalWatch. Before anything else — every record in here is synthetic, and the
+> schema has no name, no date of birth and no resolvable identifier to put real data into.
+> The terms are ours, not MedDRA. Both of those are on the front page rather than in a
+> footnote, and I'll come back to why."
+
+Then **click Portfolio in the left rail.** Skip this beat if you are running long — the same
+two sentences can be said over the portfolio while it loads.
+
 ### 1 · Portfolio — 45 seconds
-**Open `/portfolio`.**
+**Click `Portfolio`** (or open `/portfolio`).
 
 > "This is every trial at AIIA on one screen. Seven active studies, 222 subjects enrolled
 > against a target of 530, ten of twelve sites activated, 42 open queries."
@@ -147,13 +158,14 @@ sqlite3 data/ctms.db "DROP TRIGGER audit_events_no_update;
 
 | Beat | Target | Cumulative |
 |---|---|---|
-| 1 Portfolio | 0:45 | 0:45 |
-| 2 Drill down | 0:40 | 1:25 |
-| 3 File an SAE | 1:10 | 2:35 |
-| 4 Safety signal | 0:45 | 3:20 |
-| 5 Audit trail | 0:40 | 4:00 |
-| 6 Break it | 0:45 | 4:45 |
-| 7 Close | 0:20 | 5:05 |
+| 0 Overview *(optional)* | 0:15 | 0:15 |
+| 1 Portfolio | 0:45 | 1:00 |
+| 2 Drill down | 0:40 | 1:40 |
+| 3 File an SAE | 1:10 | 2:50 |
+| 4 Safety signal | 0:45 | 3:35 |
+| 5 Audit trail | 0:40 | 4:15 |
+| 6 Break it | 0:45 | 5:00 |
+| 7 Close | 0:20 | 5:20 |
 
 Over by a minute, so the cuts get decided now rather than on stage. **Cut beat 2's CTRI aside
 first** (−15s), then **the second half of beat 4** — keep the pruritus finding, drop the

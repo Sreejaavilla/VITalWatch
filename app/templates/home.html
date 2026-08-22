@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% block title %}{{ settings.app_name }} — clinical trials and pharmacovigilance{% endblock %}
+
+{% block content %}
+<section class="panel overflow-hidden">
+  <div class="grid gap-8 p-8 lg:grid-cols-[1.4fr_1fr] lg:p-10">
+    <div>
+      <p class="text-[11px] font-semibold uppercase tracking-[0.12em] text-teal-700">
+        {{ settings.org_name }}
+      </p>
+      <h1 class="mt-3 text-[32px] font-semibold leading-tight tracking-tight text-slate-900">
+        One auditable view of the trial lifecycle
+      </h1>
+      <p class="mt-3 max-w-xl text-[15px] leading-relaxed text-slate-600">
+        Clinical trial management and pharmacovigilance for AYUSH trials — portfolio
+        oversight, adverse-event intake with statutory reporting clocks, safety-signal
+        detection, and an audit trail that can prove it has not been altered.
+      </p>
+
+      <div class="mt-6 flex flex-wrap items-center gap-2">
+        <a href="/portfolio" class="btn btn-primary px-4 py-2 text-[13.5px]">Open portfolio</a>
+        <a href="/audit?verify=1" class="btn btn-secondary px-4 py-2 text-[13.5px]">Verify audit chain</a>
+        <a href="/docs" class="btn btn-quiet px-3 py-2 text-[13.5px]">API</a>
+      </div>
+
+      <p class="mt-5 max-w-xl text-[12px] leading-relaxed text-slate-500">
+        <span class="font-medium text-slate-700">Every record here is synthetic.</span>
+        Subjects carry pseudonymous codes and the schema has no name, date of birth or
+        resolvable identifier to put real data into. Adverse-event terms are coded against
+        a vocabulary written for this demonstration —
+        <span class="font-medium text-slate-700">MedDRA and WHODrug are licensed
+        dictionaries and are not used.</span>
+      </p>
+    </div>
+
+    <div class="rounded border border-slate-200 bg-slate-50/70 p-5">
+      <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+        Currently loaded
+      </p>
+      <dl class="mt-3 grid grid-cols-2 gap-x-4 gap-y-3">
+        {% for label, value in [
+          ('Studies', counts.studies), ('Sites', counts.sites),
+          ('Subjects', counts.subjects), ('Visits', counts.visits),
+          ('Adverse events', counts.adverse_events), ('Coded', counts.coded)
+        ] %}
+          <div>
+            <dt class="text-[11px] text-slate-500">{{ label }}</dt>
+            <dd class="text-[19px] font-semibold tabular-nums text-slate-900">{{ value }}</dd>
+          </div>
+        {% endfor %}
+      </dl>
+
+      <div class="mt-4 border-t border-slate-200 pt-3">
+        <div class="flex items-center gap-2">
+          <span class="h-1.5 w-1.5 rounded-full {{ 'bg-emerald-500' if chain.ok else 'bg-red-500' }}"></span>
+          <span class="text-[12px] font-medium text-slate-700">
+            {% if chain.ok %}Audit chain intact{% else %}Chain broken at sequence {{ chain.seq }}{% endif %}
+          </span>
+        </div>
+        <p class="mt-1 font-mono text-[10.5px] text-slate-500">
+          {{ chain.count }} events · head {{ chain.head[:16] if chain.ok else '—' }}…
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% if urgent %}
+<section class="mt-4 rounded border border-red-200 bg-red-50 px-4 py-3">
+  <div class="flex flex-wrap items-center gap-x-6 gap-y-1 text-[13px] text-red-900">
+    <span class="font-medium">Needs attention now</span>
+    {% for item, href in urgent %}
+      <a href="{{ href }}" class="hover:underline">{{ item }}</a>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<div class="mt-4 grid gap-4 md:grid-cols-2">
+  {% for card in cards %}
+  <a href="{{ card.href }}" class="panel group block p-5 transition hover:border-slate-300">
+    <div class="flex items-baseline justify-between gap-4">
+      <h2 class="text-[15px] font-semibold text-slate-900 group-hover:text-teal-800">{{ card.title }}</h2>
+      <span class="text-[12px] tabular-nums text-slate-400">{{ card.stat }}</span>
+    </div>
+    <p class="mt-1.5 text-[13px] leading-relaxed text-slate-600">{{ card.body }}</p>
+    <p class="mt-3 text-[11.5px] leading-relaxed text-slate-500">{{ card.detail }}</p>
+    <span class="mt-3 inline-block text-[12.5px] font-medium text-teal-700">{{ card.cta }} →</span>
+  </a>
+  {% endfor %}
+</div>
+
+<div class="mt-4 grid gap-4 lg:grid-cols-3">
+  <section class="panel p-5 lg:col-span-2">
+    <h2 class="text-[13px] font-semibold text-slate-700">Regulatory framing</h2>
+    <dl class="mt-3 space-y-2.5 text-[12.5px] leading-relaxed">
+      {% for term, body in [
+        ('New Drugs & Clinical Trials Rules 2019',
+         'A serious adverse event must reach the Ethics Committee and the licensing authority within 24 hours, with a narrative within 14 days. Both clocks start at intake and are stored, not drawn over a date.'),
+        ('CTRI',
+         'Prospective registration is mandatory before the first subject is enrolled. A study recruiting without a registration number is flagged on its own page.'),
+        ('DPDP Act 2023',
+         'Data minimisation is enforced by the schema: there is no name, no date of birth and no resolvable identifier on a subject record.'),
+        ('ALCOA+',
+         'Attributable, legible, contemporaneous, original and accurate — mapped principle by principle in the compliance documentation.')
+      ] %}
+        <div>
+          <dt class="font-medium text-slate-800">{{ term }}</dt>
+          <dd class="text-slate-600">{{ body }}</dd>
+        </div>
+      {% endfor %}
+    </dl>
+  </section>
+
+  <section class="panel p-5">
+    <h2 class="text-[13px] font-semibold text-slate-700">Deliberately not built</h2>
+    <ul class="mt-3 space-y-2 text-[12.5px] leading-relaxed text-slate-600">
+      <li><span class="font-medium text-slate-800">Authentication and roles.</span>
+        A presentation-only role switcher would look like access control while enforcing
+        nothing.</li>
+      <li><span class="font-medium text-slate-800">Licensed dictionaries.</span>
+        MedDRA and WHODrug are commercial and under subscription.</li>
+      <li><span class="font-medium text-slate-800">Live EDC / ABDM exchange.</span>
+        FHIR R4 resource shapes exist; a counterparty system does not.</li>
+      <li><span class="font-medium text-slate-800">SDTM beyond <span class="font-mono">DM</span>.</span>
+        One domain demonstrates the mapping.</li>
+    </ul>
+    <p class="mt-3 text-[11.5px] text-slate-500">
+      Each is a scoping decision with a stated reason, not an omission.
+    </p>
+  </section>
+</div>
+{% endblock %}

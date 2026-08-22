@@ -67,11 +67,39 @@ app = FastAPI(
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 
 
-def page(request: Request, template: str, **context) -> HTMLResponse:
-    """Render a template with the values every page needs."""
+def page(
+    request: Request, template: str, db: sqlite3.Connection | None = None, **context
+) -> HTMLResponse:
+    """Render a template with the values every page needs.
+
+    `db` is optional only so a page with nothing to badge can omit it; when present the
+    sidebar counts come from the same connection as the page's own data, so the badge
+    can never disagree with the table underneath it.
+    """
     return templates.TemplateResponse(
-        request=request, name=template, context={"settings": settings, **context}
+        request=request,
+        name=template,
+        context={
+            "settings": settings,
+            "nav_counts": nav_counts(db) if db is not None else None,
+            **context,
+        },
     )
+
+
+def nav_counts(db: sqlite3.Connection) -> dict:
+    """The two numbers the sidebar badges, computed per request.
+
+    Only counts that represent work waiting for someone. A badge on a nav item that is
+    merely non-zero teaches people to ignore badges.
+    """
+    return {
+        "open_saes": db.execute(
+            "SELECT COUNT(*) FROM adverse_events WHERE serious = 1 AND timeline_status "
+            "IN ('breached', 'due_soon')"
+        ).fetchone()[0],
+        "signals": len([s for s in signals.detect(db) if s.flagged]),
+    }
 
 
 # --------------------------------------------------------------- template filters
@@ -172,10 +200,92 @@ def verify_chain(db: sqlite3.Connection = Depends(get_db)):
 # ------------------------------------------------------------------------- pages
 
 
-@app.get("/", tags=["pages"])
-def index():
-    """The portfolio is the front door."""
-    return RedirectResponse("/portfolio", status_code=307)
+@app.get("/", response_class=HTMLResponse, tags=["pages"])
+def home(request: Request, db: sqlite3.Connection = Depends(get_db)):
+    """The front door.
+
+    A redirect straight to the portfolio assumed the reader already knew what this system
+    is and what it deliberately is not. Someone opening the URL cold — a judge, an
+    inspector, anyone who did not watch the demo — needs the synthetic-data and MedDRA
+    position stated before they read a single number, not discovered in a footnote.
+    """
+    def count(sql: str) -> int:
+        return db.execute(sql).fetchone()[0]
+
+    counts = {
+        "studies": count("SELECT COUNT(*) FROM studies"),
+        "sites": count("SELECT COUNT(*) FROM sites"),
+        "subjects": count("SELECT COUNT(*) FROM subjects"),
+        "visits": count("SELECT COUNT(*) FROM visits"),
+        "adverse_events": count("SELECT COUNT(*) FROM adverse_events"),
+        "coded": count("SELECT COUNT(*) FROM adverse_events WHERE coded_term IS NOT NULL"),
+    }
+
+    raised = alerts.evaluate(db)
+    critical = [a for a in raised if a.severity.value == "critical"]
+    breached = count(
+        "SELECT COUNT(*) FROM adverse_events WHERE timeline_status = 'breached'"
+    )
+    due_soon = count(
+        "SELECT COUNT(*) FROM adverse_events WHERE timeline_status = 'due_soon'"
+    )
+    flagged = [s for s in signals.detect(db) if s.flagged]
+
+    # Only genuinely time-critical things. A banner that lists everything is a banner
+    # nobody reads, and the statutory deadlines are the items with a legal clock on them.
+    urgent = []
+    if breached:
+        urgent.append((f"{breached} SAE reporting deadline(s) breached", "/ae"))
+    if due_soon:
+        urgent.append((f"{due_soon} due within {settings.sae_due_soon_hours} hours", "/ae"))
+    if critical:
+        urgent.append((f"{len(critical)} critical alert(s)", "/portfolio"))
+
+    cards = [
+        {
+            "title": "Portfolio", "href": "/portfolio",
+            "stat": f"{counts['studies']} studies",
+            "body": "Six live metrics across every study, with alerts ranked by severity "
+                    "and each one linking to the study it came from.",
+            "detail": "Enrolment is measured against plan-to-date rather than the final "
+                      "target, so a young study is not flagged for being young. Every "
+                      "threshold is read from the environment.",
+            "cta": "Open portfolio",
+        },
+        {
+            "title": "Adverse events", "href": "/ae",
+            "stat": f"{counts['adverse_events']} reported",
+            "body": "Intake that codes the free-text narrative as it arrives and starts "
+                    "the statutory reporting clock the moment an event is marked serious.",
+            "detail": "Coding tolerates the way sites actually write — misspellings, "
+                      "classical terminology, and synonyms across sites that would "
+                      "otherwise split one signal into none.",
+            "cta": "Report or review events",
+        },
+        {
+            "title": "Safety signals", "href": "/signals",
+            "stat": f"{len(flagged)} above threshold",
+            "body": "Coded terms ranked by proportional reporting ratio, screened at "
+                    "PRR ≥ 2 with at least 3 cases.",
+            "detail": "A triage order for a Data Safety Monitoring Board — not an "
+                      "incidence rate and not causation. Sub-threshold rows stay visible "
+                      "so the criterion can be seen doing its work.",
+            "cta": "Review signals",
+        },
+        {
+            "title": "Audit trail", "href": "/audit",
+            "stat": f"{count('SELECT COUNT(*) FROM audit_events')} events",
+            "body": "Every change in sequence with before and after state, each entry "
+                    "committing to the hash of the entry before it.",
+            "detail": "UPDATE and DELETE are refused by the database itself, so the "
+                      "guarantee holds even if the application does not. Verification "
+                      "names the first altered row rather than reporting a generic failure.",
+            "cta": "Inspect and verify",
+        },
+    ]
+
+    return page(request, "home.html", db=db, counts=counts, cards=cards,
+                urgent=urgent, chain=audit.verify(db))
 
 
 @app.get("/portfolio", response_class=HTMLResponse, tags=["pages"])
@@ -196,6 +306,7 @@ def portfolio(request: Request, db: sqlite3.Connection = Depends(get_db)):
     return page(
         request,
         "portfolio.html",
+        db=db,
         k=kpi.portfolio_kpi(db),
         studies=studies,
         alerts=alerts.evaluate(db),
@@ -239,6 +350,7 @@ def study_detail(study_id: str, request: Request, db: sqlite3.Connection = Depen
     return page(
         request,
         "study.html",
+        db=db,
         study=study,
         k=kpi.study_kpi(db, study_id),
         sites=sites,
@@ -294,6 +406,7 @@ def adverse_events(
     return page(
         request,
         "ae.html",
+        db=db,
         events=events,
         studies=studies,
         clocks=clocks,
@@ -408,6 +521,7 @@ def safety_signals(
     return page(
         request,
         "signals.html",
+        db=db,
         signals=found,
         flagged=[s for s in found if s.flagged],
         min_cases=min_cases,
@@ -521,6 +635,7 @@ def audit_log(
     return page(
         request,
         "audit.html",
+        db=db,
         events=events,
         total=total,
         matched=matched,

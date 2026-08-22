@@ -1,3 +1,4 @@
+{% from "_macros.html" import nav_link %}
 <!doctype html>
 <html lang="en" class="h-full">
 <head>
@@ -13,50 +14,59 @@
   </style>
   <link rel="stylesheet" href="/static/app.css">
 </head>
-<body class="h-full bg-slate-100/70 text-slate-800 antialiased">
+<body class="min-h-full bg-slate-100/70 text-slate-800 antialiased">
 
-<header class="border-b border-slate-800 bg-slate-900 text-white">
-  <div class="mx-auto flex max-w-[1400px] items-center gap-10 px-6">
-    <a href="/" class="flex items-center gap-2.5 py-3">
-      <span class="grid h-7 w-7 place-items-center rounded bg-teal-400 text-[13px] font-semibold text-slate-900">V</span>
+<div class="flex min-h-screen">
+
+  {# Left rail. Nav belongs on one edge, not stretched across the top — and a persistent
+     rail is what makes an operational tool feel like one rather than like a website. #}
+  <aside class="sidebar">
+    <a href="/" class="flex items-center gap-2.5 px-4 py-4">
+      <span class="grid h-8 w-8 shrink-0 place-items-center rounded bg-teal-400 text-[14px] font-semibold text-slate-900">V</span>
       <span class="leading-tight">
-        <span class="block text-[15px] font-semibold tracking-tight">{{ settings.app_name }}</span>
-        <span class="block text-[10.5px] uppercase tracking-wider text-slate-400">{{ settings.org_name }}</span>
+        <span class="block text-[15px] font-semibold tracking-tight text-white">{{ settings.app_name }}</span>
+        <span class="block text-[10px] uppercase tracking-wider text-slate-500">Clinical trials · PV</span>
       </span>
     </a>
 
-    <nav class="flex items-center gap-6 self-end">
-      {% for href, label in [
-        ('/portfolio', 'Portfolio'),
-        ('/ae', 'Adverse events'),
-        ('/signals', 'Safety signals'),
-        ('/audit', 'Audit trail')
-      ] %}
-        <a href="{{ href }}" class="tab {{ 'tab-on' if request.url.path.startswith(href) }}">{{ label }}</a>
-      {% endfor %}
+    <nav class="mt-2 flex-1 px-2">
+      <p class="nav-section">Oversight</p>
+      {{ nav_link('/', 'Overview', request) }}
+      {{ nav_link('/portfolio', 'Portfolio', request) }}
+
+      <p class="nav-section">Pharmacovigilance</p>
+      {{ nav_link('/ae', 'Adverse events', request, badge=nav_counts.open_saes if nav_counts else None) }}
+      {{ nav_link('/signals', 'Safety signals', request, badge=nav_counts.signals if nav_counts else None) }}
+
+      <p class="nav-section">Compliance</p>
+      {{ nav_link('/audit', 'Audit trail', request) }}
+      {{ nav_link('/docs', 'API', request) }}
     </nav>
 
-    <div class="ml-auto flex items-center gap-4 self-center text-[11px]">
-      <span class="hidden items-center gap-1.5 text-slate-400 lg:flex">
+    <div class="border-t border-slate-800 px-4 py-3">
+      <div class="flex items-center gap-2 text-[11px] text-slate-400">
         <span class="h-1.5 w-1.5 rounded-full bg-amber-400"></span>
-        Synthetic data
-      </span>
-      <a href="/docs" class="text-slate-400 hover:text-white">API</a>
+        Synthetic data only
+      </div>
+      <p class="mt-1 text-[10.5px] leading-relaxed text-slate-500">
+        {{ settings.org_name }}
+      </p>
     </div>
-  </div>
-</header>
+  </aside>
 
-<main class="mx-auto max-w-[1400px] px-6 py-6">
-  {% block content %}{% endblock %}
-</main>
+  <div class="flex min-w-0 flex-1 flex-col">
+    <main class="flex-1 px-8 py-6">
+      {% block content %}{% endblock %}
+    </main>
 
-<footer class="mt-12 border-t border-slate-200 bg-white">
-  <div class="mx-auto flex max-w-[1400px] flex-wrap gap-x-8 gap-y-1 px-6 py-4 text-[11px] text-slate-500">
-    <span>{{ settings.app_name }} — demonstration system</span>
-    <span>Synthetic records only. Subjects carry pseudonymous codes; no participant is identifiable.</span>
-    <span>AE terms coded against a curated vocabulary — not MedDRA or WHODrug.</span>
+    <footer class="border-t border-slate-200 bg-white px-8 py-3">
+      <div class="flex flex-wrap gap-x-6 gap-y-1 text-[11px] text-slate-500">
+        <span>Demonstration system — no participant is identifiable.</span>
+        <span>AE terms coded against a curated vocabulary, not MedDRA or WHODrug.</span>
+      </div>
+    </footer>
   </div>
-</footer>
+</div>
 
 </body>
 </html>

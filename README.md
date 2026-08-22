@@ -33,6 +33,7 @@ never disagree about a number.
 
 | Path | What it shows |
 |---|---|
+| `/` | Overview — what the system is, what is loaded, and what is deliberately not built |
 | `/portfolio` | Six portfolio KPIs across all studies, severity-ranked alerts, study table |
 | `/study/{id}` | Enrolment against plan-to-date, sites, milestone timeline, deviations, open queries |
 | `/ae` | Adverse-event register and intake form — coding and statutory clocks on submit |

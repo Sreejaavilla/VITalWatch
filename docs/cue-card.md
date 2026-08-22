@@ -2,14 +2,14 @@
 
 Full wording in `demo-script.md`. This is the version you can actually glance at.
 
-**Before you start:** `./scripts/rehearse.py` green · app running · tabs `/portfolio` `/ae`
-`/signals` `/audit` · terminal on screen 2 with the tamper commands typed · video tab open ·
+**Before you start:** `./scripts/rehearse.py` green · app running · tabs `/` `/portfolio` `/ae` `/signals` `/audit` · terminal on screen 2 with the tamper commands typed · video tab open ·
 notifications off.
 
 ---
 
 | # | Screen | The line that matters | Time |
 |---|---|---|---|
+| 0 | `/` |  *(optional)* synthetic data · not MedDRA · then click **Portfolio** | 0:15 |
 | 1 | `/portfolio` | 7 studies · 222 of 530 · **8 alerts, thresholds from config** · lag is vs **plan-to-date**, not final target | 0:45 |
 | 2 | click EC alert → `/study/STU-002` | approval expires in **21 days** — a lapsed approval is a **stop-work condition** | 0:40 |
 | 3 | `/ae` — type it live | `severe diarhea and dehydration since last night` · STU-002 · AIIA-002-004 · severe · probable · **tick Serious** | 1:10 |
@@ -19,7 +19,7 @@ notifications off.
 | 6 | terminal | UPDATE **refused by the database** → drop trigger → UPDATE → reload → **"Chain broken at sequence 3"** — *it names the row* | 0:45 |
 | 7 | — | one auditable view · clocks running · log that cannot be quietly edited · **no name field to put real data into** | 0:20 |
 
-**Runs 5:05. Cuts in order:** beat 2's CTRI aside → beat 4's Arthralgia counter-example →
+**Runs 5:20. Cuts in order:** beat 0, then beat 2's CTRI aside → beat 4's Arthralgia counter-example →
 beat 2 entirely. **Never cut beat 6.**
 
 ---
