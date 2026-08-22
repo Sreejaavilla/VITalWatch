@@ -161,7 +161,7 @@ Nothing here is optional. After this nobody blocks anybody.
 - [x] **[Caleb]** `contracts/roles.yaml` — 7 roles × resource × action matrix, including which roles may *never* see subject-identifying fields.
 - [ ] **[Caleb]** Supabase project created, 7 demo users seeded (one per role), `POST /auth/login` returns a JWT carrying a `role` claim. Verify: decode the token, see the role.
 - [ ] **[Caleb]** `backend/app/db/schema.sql` covers studies, sites, subjects, visits, deviations, queries, aes, milestones, audit_events, users. Verify: it applies against Supabase with no errors.
-- [ ] **[Roxy]** `datagen` emits 8 studies + sites + enrolment curves into `contracts/fixtures/`. Verify: `python -m datagen.run --out contracts/fixtures/` produces valid JSON that imports as `contracts.models`. ⛔ blocks: stub mode looking real
+- [x] **[Roxy]** `datagen` emits 8 studies + sites + enrolment curves into `contracts/fixtures/`. Verify: `python -m datagen.run --out contracts/fixtures/` produces valid JSON that imports as `contracts.models`. ⛔ blocks: stub mode looking real
 - [ ] **[Sreeja]** `services/pv/terms/` holds ~200 curated PT/LLT rows and ~40 drug rows, CSV, with the `CodingService` interface signature written (not implemented).
 - [ ] **[Ishan]** Next.js on Vercel with routes existing (blank is fine) for: `/login`, `/portfolio`, `/study/[id]`, `/ae`, `/audit`, `/alerts`.
 - [ ] **[Rackshitha]** `docs/compliance-matrix.md` has every regulation listed as a row with an empty "where addressed" column. Filling it is Phase 2.
