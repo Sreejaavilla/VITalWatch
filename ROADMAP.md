@@ -158,7 +158,7 @@ Nothing here is optional. After this nobody blocks anybody.
 - [x] **[Kavin]** `contracts/openapi.yaml` lists every endpoint with its response shape. Verify: Ishan can name the endpoint behind each of his 6 screens without asking.
 - [x] **[Kavin]** `backend/app/main.py` registers all 12 routers. Verify: `GET /health` returns `200 {"status":"ok","stub_mode":true}` on the **Render URL**, not localhost. ⛔ blocks: Phase 3 video
 - [ ] **[Kavin]** Vercel frontend fetches Render `/health` successfully across CORS. Verify: the deployed page prints the backend's JSON. ⛔ blocks: everything at hour 22
-- [ ] **[Caleb]** `contracts/roles.yaml` — 7 roles × resource × action matrix, including which roles may *never* see subject-identifying fields.
+- [x] **[Caleb]** `contracts/roles.yaml` — 7 roles × resource × action matrix, including which roles may *never* see subject-identifying fields.
 - [ ] **[Caleb]** Supabase project created, 7 demo users seeded (one per role), `POST /auth/login` returns a JWT carrying a `role` claim. Verify: decode the token, see the role.
 - [ ] **[Caleb]** `backend/app/db/schema.sql` covers studies, sites, subjects, visits, deviations, queries, aes, milestones, audit_events, users. Verify: it applies against Supabase with no errors.
 - [ ] **[Roxy]** `datagen` emits 8 studies + sites + enrolment curves into `contracts/fixtures/`. Verify: `python -m datagen.run --out contracts/fixtures/` produces valid JSON that imports as `contracts.models`. ⛔ blocks: stub mode looking real
