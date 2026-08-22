@@ -1,4 +1,13 @@
-// Audit trail — the pitch's proof screen. OWNER: Ishan.
-// Chronological events with actor, role, action, resource, before/after, UTC timestamp.
-// Include the "verify chain" button wired to GET /api/audit/verify: pressing it live
-// in front of judges is the single strongest 15 seconds of the demo.
+// Audit trail. OWNER: Ishan.
+// Phase 0 placeholder so the route resolves and the build passes.
+// Backing endpoints: GET /api/audit · GET /api/audit/verify
+
+export default function AuditPage() {
+  return (
+    <main style={{ padding: 32, fontFamily: 'system-ui, sans-serif' }}>
+      <h1>Audit trail</h1>
+      <p style={{ color: '#666' }}>Placeholder — Phase 1.</p>
+      <p style={{ color: '#666', fontFamily: 'ui-monospace, monospace', fontSize: 13 }}>GET /api/audit · GET /api/audit/verify</p>
+    </main>
+  )
+}
