@@ -141,20 +141,32 @@ Deleting the database and restarting rebuilds the entire portfolio in about two 
 seed is fixed, so every number comes back identical — the demo, the deck and the video can't
 disagree with each other. And there's a recorded run on this laptop that plays offline.
 
-### 11. "SQLite? For a multi-site clinical trial system?"
+### 11. "What's the database, and is it actually shared?"
 
-Correct for one node and one demo; wrong for production, and I'll say that unprompted. Every
-query goes through one module, the schema is ordinary SQL, and the migration to Postgres is a
-connection change plus the constraints Postgres would enforce more strictly than SQLite does.
+**Postgres, hosted on Supabase.** It started on SQLite, and the move was one module — every
+query already went through `app/db.py`, so the swap cost a driver rather than a rewrite. That
+was the point of putting it behind a boundary in the first place.
 
-What SQLite bought me: the whole system is one process with no infrastructure, which is why the
-recovery answer to question 10 is two seconds rather than "let me redeploy".
+Both engines still work, and `DATABASE_URL` picks. That is not indecision, it is the stage
+insurance: if the venue network is down, unset one variable and the whole system runs from a
+local file with the same data.
+
+The detail I would offer if they are technical: **seeding either engine produces the same audit
+chain head hash**, `72d9d98…`. The chain hashes record content, not storage, so the integrity
+guarantee is a property of the data rather than of the vendor. `python -m scripts.supabase verify`
+prints it and compares.
+
+*(If asked why not SQLite in production: one writer, one node, and no network isolation. The
+append-only guarantee holds on both — a trigger in each — but Postgres also gives roles, and
+the tables carry deny-all row-level security so Supabase's auto-generated REST API returns
+nothing to the public key.)*
 
 ### 12. "What would you do with another week?"
 
 In order. **Authentication and enforced roles** — it's the largest gap and everything else
 depends on knowing who is acting. **More SDTM domains** — `DM` is exported today, and `AE` is the
-obvious next one because the events are already coded. **Postgres and a hardened deployment.**
+obvious next one because the events are already coded. **A hardened deployment** — Postgres is already live on Supabase; what is missing is private
+networking, backups and a restore rehearsal.
 **A live FHIR exchange against a test EDC** — the resource shapes exist, the counterparty doesn't.
 Then a confidence interval on the PRR, once there's enough volume for one to mean anything.
 

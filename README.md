@@ -20,7 +20,33 @@ python -m venv .venv && .venv/bin/pip install -r requirements.txt
 ./scripts/run.sh                     # http://localhost:8000
 ```
 
-The database seeds itself on first start. To rebuild it from scratch at any point:
+## The database
+
+**Supabase PostgreSQL**, selected by one environment variable:
+
+```bash
+DATABASE_URL="postgresql://postgres.<ref>:<password>@aws-0-<region>.pooler.supabase.com:5432/postgres"
+```
+
+Use a **pooler** host. Supabase's direct host (`db.<ref>.supabase.co`) is IPv6-only and
+unreachable from most networks and from Render's free tier.
+
+```bash
+python -m scripts.supabase check     # connect, count rows, probe the append-only guard
+python -m scripts.supabase init      # create the schema and seed if empty
+python -m scripts.supabase reset     # drop everything and rebuild
+python -m scripts.supabase verify    # walk the chain, print and compare the head hash
+```
+
+**With `DATABASE_URL` unset the same queries run against a local SQLite file** and the
+application needs no network at all. That is not a leftover — it is the fallback if the venue
+network dies, and it is testable: `scripts/rehearse.py` passes against both engines, and seeding
+either produces the same audit chain head, `72d9d98…`. The chain hashes record content rather
+than storage, so the integrity guarantee does not depend on the vendor.
+
+`/health` reports which engine is live.
+
+To rebuild the data from scratch at any point:
 
 ```bash
 ./scripts/seed.sh                    # ~2 seconds, identical data every time
@@ -56,9 +82,10 @@ python -m app.fhir STU-003                         # study as a FHIR R4 Research
 
 ## Stack
 
-FastAPI · Jinja2 server-rendered templates · SQLite via stdlib `sqlite3` · Tailwind and Chart.js
-from a CDN. **One process, one file, no build step.** See [`docs/architecture.md`](./docs/architecture.md)
-for why, and for the three points where this swaps to a production posture.
+FastAPI · Jinja2 server-rendered templates · PostgreSQL on Supabase, or stdlib `sqlite3` ·
+Tailwind and Chart.js from a CDN. **One process, no build step.**
+See [`docs/architecture.md`](./docs/architecture.md) for why, and for the three points where this
+swaps to a production posture — one of which has since been taken.
 
 ## The audit trail
 
@@ -70,9 +97,15 @@ than reporting a generic failure.
 does not depend on the application being uncompromised:
 
 ```bash
+psql "$DATABASE_URL" -c "UPDATE audit_events SET after_json='{}' WHERE seq=3;"
+# ERROR:  audit_events is append-only: UPDATE is not permitted
+
 sqlite3 data/ctms.db "UPDATE audit_events SET after_json='{}' WHERE seq=3;"
 # Error: audit_events is append-only: UPDATE is not permitted
 ```
+
+The same refusal on both engines — a trigger function in Postgres, a trigger in SQLite.
+`scripts/rehearse.py` asserts it rather than assuming it.
 
 ## Not built, deliberately
 

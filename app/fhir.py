@@ -15,7 +15,7 @@ part a generic FHIR example will not show you.
 
 from __future__ import annotations
 
-import sqlite3
+from .db import Connection, Row  # driver-neutral: SQLite or Postgres
 
 #: Our study lifecycle to the FHIR R4 `ResearchStudy.status` value set. FHIR's vocabulary
 #: is narrower than ours, so several of our stages collapse into `active`. Collapsing is
@@ -40,7 +40,7 @@ PHASE_MAP = {
 }
 
 
-def research_study(study: sqlite3.Row) -> dict:
+def research_study(study: Row) -> dict:
     """One study as a FHIR R4 `ResearchStudy`."""
     resource: dict = {
         "resourceType": "ResearchStudy",

@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import csv
 import io
-import sqlite3
+from .db import Connection, Row  # driver-neutral: SQLite or Postgres
 from collections.abc import Iterator
 
 #: DM variables in submission order. `AGE` is deliberately absent and `AGEGR1` carries
@@ -45,7 +45,7 @@ COLUMNS = (
 ARM_CODES = {"Trial drug": "TRT", "Control": "CTL"}
 
 
-def _row(subject: sqlite3.Row, study_id: str) -> dict[str, str]:
+def _row(subject: Row, study_id: str) -> dict[str, str]:
     arm = subject["arm"] or ""
     return {
         "STUDYID": study_id,
@@ -68,7 +68,7 @@ def _row(subject: sqlite3.Row, study_id: str) -> dict[str, str]:
     }
 
 
-def dm_rows(conn: sqlite3.Connection, study_id: str | None = None) -> Iterator[str]:
+def dm_rows(conn: Connection, study_id: str | None = None) -> Iterator[str]:
     """Yield the DM domain as CSV text, one row at a time.
 
     Streamed rather than assembled in memory. At 392 subjects that is unnecessary; at

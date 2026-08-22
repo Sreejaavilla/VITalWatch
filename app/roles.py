@@ -20,11 +20,11 @@ differently and then disagree about on stage.
 
 from __future__ import annotations
 
-import sqlite3
+from .db import Connection  # driver-neutral: SQLite or Postgres
 from dataclasses import dataclass
 from datetime import date, timedelta
 
-from . import alerts, audit, kpi, signals
+from . import alerts, audit, db, kpi, signals
 from .config import settings
 from .kpi import ACTIVE_STATUSES, ENROLMENT_WINDOW_DAYS, OPEN_SAE_OUTCOMES, _today
 
@@ -81,7 +81,7 @@ ROLES: tuple[Role, ...] = (
 BY_ID = {r.id: r for r in ROLES}
 
 
-def _scalar(conn: sqlite3.Connection, sql: str, params: tuple = ()) -> int:
+def _scalar(conn: Connection, sql: str, params: tuple = ()) -> int:
     return conn.execute(sql, params).fetchone()[0] or 0
 
 
@@ -99,7 +99,7 @@ def _pct(part: int, whole: int) -> float:
 # ------------------------------------------------------------------- investigator
 
 
-def investigators(conn: sqlite3.Connection) -> list[str]:
+def investigators(conn: Connection) -> list[str]:
     """Every PI with at least one study, most studies first — the scope selector."""
     return [
         r[0]
@@ -109,7 +109,7 @@ def investigators(conn: sqlite3.Connection) -> list[str]:
     ]
 
 
-def investigator(conn: sqlite3.Connection, pi: str) -> dict:
+def investigator(conn: Connection, pi: str) -> dict:
     """The investigator lens, scoped to one principal investigator.
 
     Scoping to a real `pi_name` rather than showing the whole portfolio is the point:
@@ -152,10 +152,11 @@ def investigator(conn: sqlite3.Connection, pi: str) -> dict:
 
     queries = sum(r["open_queries"] for r in rows)
     ageing = conn.execute(
-        f"""SELECT AVG(julianday(?) - julianday(raised_date)) FROM queries
+        f"""SELECT AVG({db.days_between('?', 'raised_date')}) FROM queries
              WHERE study_id IN ({marks}) AND status != 'closed'""",
         (today.isoformat(), *ids),
     ).fetchone()[0]
+    ageing = float(ageing) if ageing is not None else None
     saes = sum(r["open_saes"] for r in rows)
 
     nxt = conn.execute(
@@ -220,7 +221,7 @@ def investigator(conn: sqlite3.Connection, pi: str) -> dict:
 # -------------------------------------------------------------------------- safety
 
 
-def safety(conn: sqlite3.Connection) -> dict:
+def safety(conn: Connection) -> dict:
     """The pharmacovigilance lens: statutory clocks first, then disproportionality."""
     today = _today()
     total_ae = _scalar(conn, "SELECT COUNT(*) FROM adverse_events")
@@ -309,7 +310,7 @@ def safety(conn: sqlite3.Connection) -> dict:
 # ---------------------------------------------------------------------- leadership
 
 
-def leadership(conn: sqlite3.Connection) -> dict:
+def leadership(conn: Connection) -> dict:
     """The institutional lens: portfolio performance and audit-readiness."""
     today = _today()
     k = kpi.portfolio_kpi(conn)

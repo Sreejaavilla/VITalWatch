@@ -3,3 +3,8 @@ uvicorn[standard]
 jinja2
 pydantic-settings
 python-multipart
+
+# Postgres driver, used only when DATABASE_URL is set. [binary] ships the compiled
+# libpq so no build toolchain is needed on the host.
+psycopg[binary]
+psycopg-pool

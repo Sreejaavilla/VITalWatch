@@ -17,7 +17,7 @@ past their 24-hour clock. A portfolio where nothing is wrong demonstrates nothin
 from __future__ import annotations
 
 import random
-import sqlite3
+from .db import Connection  # driver-neutral: SQLite or Postgres
 import uuid
 from datetime import date, datetime, time, timedelta, timezone
 
@@ -93,7 +93,7 @@ def _id(prefix: str, n: int) -> str:
     return f"{prefix}-{n:03d}"
 
 
-def seed(conn: sqlite3.Connection) -> None:
+def seed(conn: Connection) -> None:
     """Populate an empty database. Called from `db.init` on startup."""
     rng = random.Random(settings.seed_random_seed)
 
@@ -112,7 +112,7 @@ def seed(conn: sqlite3.Connection) -> None:
 # ------------------------------------------------------------------------- sites
 
 
-def _seed_sites(conn: sqlite3.Connection, rng: random.Random) -> list[dict]:
+def _seed_sites(conn: Connection, rng: random.Random) -> list[dict]:
     rows = []
     for i, (name, city, state, capacity) in enumerate(SITES, start=1):
         # Two sites are still being brought up — "sites activated" should never read n/n,
@@ -141,7 +141,7 @@ def _seed_sites(conn: sqlite3.Connection, rng: random.Random) -> list[dict]:
 # ------------------------------------------------------------------------ studies
 
 
-def _seed_studies(conn: sqlite3.Connection, rng: random.Random, sites: list[dict]) -> list[dict]:
+def _seed_studies(conn: Connection, rng: random.Random, sites: list[dict]) -> list[dict]:
     active_sites = [s for s in sites if s["status"] == "activated"]
     statuses = [
         "enrolling", "enrolling", "enrolling", "enrolling",
@@ -230,7 +230,7 @@ MILESTONE_PLAN = [
 ]
 
 
-def _seed_milestones(conn: sqlite3.Connection, rng: random.Random, studies: list[dict]) -> None:
+def _seed_milestones(conn: Connection, rng: random.Random, studies: list[dict]) -> None:
     for study in studies:
         started = date.fromisoformat(study["start_date"])
         for n, (mtype, offset) in enumerate(MILESTONE_PLAN, start=1):
@@ -254,7 +254,7 @@ def _seed_milestones(conn: sqlite3.Connection, rng: random.Random, studies: list
 # ----------------------------------------------------------------------- subjects
 
 
-def _seed_subjects(conn: sqlite3.Connection, rng: random.Random, studies: list[dict]) -> list[dict]:
+def _seed_subjects(conn: Connection, rng: random.Random, studies: list[dict]) -> list[dict]:
     age_bands = ["18-29", "30-39", "40-49", "50-59", "60-69", "70+"]
     rows: list[dict] = []
 
@@ -311,7 +311,7 @@ VISIT_SCHEDULE = [("Screening", 0), ("Baseline", 14), ("Week 4", 42), ("Week 8",
 
 
 def _seed_visits(
-    conn: sqlite3.Connection, rng: random.Random, studies: list[dict], subjects: list[dict]
+    conn: Connection, rng: random.Random, studies: list[dict], subjects: list[dict]
 ) -> None:
     # Subject visits.
     for subject in subjects:
@@ -381,7 +381,7 @@ def _seed_visits(
 OVERDUE_MONITORING_STUDIES = {"STU-002": 47, "STU-004": 96, "STU-005": 21}
 
 
-def _plant_overdue_monitoring(conn: sqlite3.Connection, studies: list[dict]) -> None:
+def _plant_overdue_monitoring(conn: Connection, studies: list[dict]) -> None:
     """Give three studies one overdue monitoring visit each, at known ages.
 
     Planted rather than left to chance: the demo script names these studies, and a
@@ -410,7 +410,7 @@ def _plant_overdue_monitoring(conn: sqlite3.Connection, studies: list[dict]) -> 
 
 
 def _seed_deviations(
-    conn: sqlite3.Connection, rng: random.Random, studies: list[dict], subjects: list[dict]
+    conn: Connection, rng: random.Random, studies: list[dict], subjects: list[dict]
 ) -> None:
     by_study: dict[str, list[dict]] = {}
     for s in subjects:
@@ -449,7 +449,7 @@ def _seed_deviations(
 
 
 def _seed_queries(
-    conn: sqlite3.Connection, rng: random.Random, studies: list[dict], subjects: list[dict]
+    conn: Connection, rng: random.Random, studies: list[dict], subjects: list[dict]
 ) -> None:
     by_study: dict[str, list[dict]] = {}
     for s in subjects:
@@ -528,7 +528,7 @@ SIGNAL_NARRATIVES = [
 
 
 def _insert_ae(
-    conn: sqlite3.Connection, rng: random.Random, study: dict, subject: dict,
+    conn: Connection, rng: random.Random, study: dict, subject: dict,
     narrative: str, severity: str, serious: bool, outcome: str | None = None,
     reported_hours_ago: float | None = None,
 ) -> None:
@@ -587,7 +587,7 @@ def _insert_ae(
 
 
 def _seed_adverse_events(
-    conn: sqlite3.Connection, rng: random.Random, studies: list[dict], subjects: list[dict]
+    conn: Connection, rng: random.Random, studies: list[dict], subjects: list[dict]
 ) -> None:
     """Around fifty events: routine ones spread across the portfolio, six serious ones,
     and one clustered term in a single study."""
@@ -638,7 +638,7 @@ def _seed_adverse_events(
 # -------------------------------------------------------------------------- audit
 
 
-def _seed_audit(conn: sqlite3.Connection, studies: list[dict]) -> None:
+def _seed_audit(conn: Connection, studies: list[dict]) -> None:
     """Lay down a short prior history so the chain is not empty at demo time.
 
     Timestamps are back-dated to each study's start; the seeder is the only caller ever

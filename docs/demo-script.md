@@ -126,16 +126,23 @@ Then point at the Arthralgia row — **this is the line that earns the domain ma
 > "The claim every CTMS makes is that its audit trail is immutable. Watch me test mine."
 
 ```bash
-sqlite3 data/ctms.db "UPDATE audit_events SET after_json='{}' WHERE seq=3;"
+psql "$DATABASE_URL" -c "UPDATE audit_events SET after_json='{}' WHERE seq=3;"
 ```
 
-> "Rejected by the database itself — a trigger, not application code. So the application being
-> compromised doesn't help you. Let me drop the trigger and try again as if I were the DBA."
+> "Rejected by the database itself — a trigger in Postgres, not application code. So the
+> application being compromised doesn't help you. Let me drop the trigger and try again as if
+> I were the DBA."
 
 ```bash
-sqlite3 data/ctms.db "DROP TRIGGER audit_events_no_update;
-                      UPDATE audit_events SET after_json='{}' WHERE seq=3;"
+psql "$DATABASE_URL" -c "DROP TRIGGER audit_events_no_update ON audit_events;
+                         UPDATE audit_events SET after_json='{}' WHERE seq=3;"
 ```
+
+*Running on the SQLite fallback instead?* Same beat, same output, two different commands —
+`sqlite3 data/ctms.db "UPDATE audit_events SET after_json='{}' WHERE seq=3;"` then
+`sqlite3 data/ctms.db "DROP TRIGGER audit_events_no_update; UPDATE audit_events SET after_json='{}' WHERE seq=3;"`.
+**Know before you start which one you are on** — `curl -s localhost:8000/health` prints
+`"backend"`. Getting this wrong is the one way to fumble the beat you cannot cut.
 
 **Back to `/audit`. Press Verify chain.** Red.
 

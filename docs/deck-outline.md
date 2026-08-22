@@ -31,7 +31,8 @@ step* — and say why: a system that recovers from total failure in two seconds 
 can demo honestly.
 
 Mark the three swap points on the diagram itself: vocabulary file → licensed dictionary,
-SQLite → Postgres, demo actor → authenticated session.
+SQLite → Postgres (**taken** — Supabase, and the audit head hash is unchanged),
+demo actor → authenticated session.
 
 ### 4 · Live demo · 4 minutes
 Per `demo-script.md`. **Do not narrate the architecture again while demoing.**

@@ -14,7 +14,7 @@ change is rolled back with it. A trail that can be silently skipped is not a tra
 
 from __future__ import annotations
 
-import sqlite3
+from .db import Connection  # driver-neutral: SQLite or Postgres  # noqa: F401
 import uuid
 from contextlib import asynccontextmanager
 from datetime import date, datetime, timedelta
@@ -27,7 +27,9 @@ from fastapi.templating import Jinja2Templates
 
 from . import alerts, audit, fhir, kpi, pv, roles, sdtm, signals
 from .config import settings
-from .db import get_db, init
+# Imported by name, not as `db`: every route already binds `db` to its connection, and
+# a module of the same name would be shadowed inside exactly the functions that use it.
+from .db import backend, close_pool, days_between, get_db, init
 from .models import AuditAction, CodingSource, utcnow
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -42,8 +44,12 @@ DEMO_ACTOR = "demo.operator"
 async def lifespan(app: FastAPI):
     """Create the schema and seed on startup if the database is empty.
 
-    This is the demo-recovery plan: `rm data/ctms.db`, restart, and the portfolio is
-    back exactly as it was.
+    This is the demo-recovery plan. On SQLite: `rm data/ctms.db`, restart, and the
+    portfolio is back exactly as it was. On Postgres: `python -m scripts.supabase reset`,
+    restart, same result and the same head hash.
+
+    Seeding is idempotent, so a Supabase instance shared by more than one process is
+    populated once by whichever gets there first.
     """
     conn = init(seed=True)
     counts = {
@@ -51,9 +57,12 @@ async def lifespan(app: FastAPI):
         for t in ("studies", "subjects", "adverse_events", "audit_events")
     }
     conn.close()
-    print(f"[{settings.app_name}] {settings.db_path}")
+    target = "postgres" if settings.database_url else settings.db_path
+    print(f"[{settings.app_name}] {backend()}: {target}")
     print(f"[{settings.app_name}] " + "  ".join(f"{k}={v}" for k, v in counts.items()))
     yield
+    # Hand the pooled Postgres sockets back before the process goes away.
+    close_pool()
 
 
 app = FastAPI(
@@ -68,7 +77,7 @@ app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="stat
 
 
 def page(
-    request: Request, template: str, db: sqlite3.Connection | None = None, **context
+    request: Request, template: str, db: Connection | None = None, **context
 ) -> HTMLResponse:
     """Render a template with the values every page needs.
 
@@ -87,7 +96,7 @@ def page(
     )
 
 
-def nav_counts(db: sqlite3.Connection) -> dict:
+def nav_counts(db: Connection) -> dict:
     """The two numbers the sidebar badges, computed per request.
 
     Only counts that represent work waiting for someone. A badge on a nav item that is
@@ -176,11 +185,14 @@ templates.env.filters["label"] = _label
 
 
 @app.get("/health", tags=["ops"])
-def health(db: sqlite3.Connection = Depends(get_db)):
+def health(db: Connection = Depends(get_db)):
     """Liveness plus enough state to tell whether the database actually seeded."""
     return {
         "status": "ok",
         "app": settings.app_name,
+        # Which engine is actually serving this. The system runs on either, and "it is
+        # in the cloud" is a claim worth being able to check rather than take on trust.
+        "backend": backend(),
         "studies": db.execute("SELECT COUNT(*) FROM studies").fetchone()[0],
         "audit_events": db.execute("SELECT COUNT(*) FROM audit_events").fetchone()[0],
         "data": "synthetic",
@@ -188,12 +200,12 @@ def health(db: sqlite3.Connection = Depends(get_db)):
 
 
 @app.get("/api/kpi/portfolio", tags=["kpi"])
-def api_portfolio_kpi(db: sqlite3.Connection = Depends(get_db)):
+def api_portfolio_kpi(db: Connection = Depends(get_db)):
     return kpi.portfolio_kpi(db)
 
 
 @app.get("/api/kpi/study/{study_id}", tags=["kpi"])
-def api_study_kpi(study_id: str, db: sqlite3.Connection = Depends(get_db)):
+def api_study_kpi(study_id: str, db: Connection = Depends(get_db)):
     result = kpi.study_kpi(db, study_id)
     if result is None:
         raise HTTPException(404, f"No study {study_id}")
@@ -201,7 +213,7 @@ def api_study_kpi(study_id: str, db: sqlite3.Connection = Depends(get_db)):
 
 
 @app.get("/api/audit/verify", tags=["audit"])
-def verify_chain(db: sqlite3.Connection = Depends(get_db)):
+def verify_chain(db: Connection = Depends(get_db)):
     """Walk the audit hash chain and report whether it is intact."""
     return audit.verify(db)
 
@@ -210,7 +222,7 @@ def verify_chain(db: sqlite3.Connection = Depends(get_db)):
 
 
 @app.get("/", response_class=HTMLResponse, tags=["pages"])
-def home(request: Request, db: sqlite3.Connection = Depends(get_db)):
+def home(request: Request, db: Connection = Depends(get_db)):
     """The front door.
 
     A redirect straight to the portfolio assumed the reader already knew what this system
@@ -302,7 +314,7 @@ def role_view(
     role_id: str,
     request: Request,
     pi: str | None = None,
-    db: sqlite3.Connection = Depends(get_db),
+    db: Connection = Depends(get_db),
 ):
     """A lens over the same data, selected for one kind of reader.
 
@@ -331,7 +343,7 @@ def role_view(
 
 @app.get("/api/kpi/role/{role_id}", tags=["kpi"])
 def api_role_kpi(
-    role_id: str, pi: str | None = None, db: sqlite3.Connection = Depends(get_db)
+    role_id: str, pi: str | None = None, db: Connection = Depends(get_db)
 ):
     """The same role metrics as JSON, definitions included.
 
@@ -369,16 +381,16 @@ def api_role_kpi(
 
 
 @app.get("/portfolio", response_class=HTMLResponse, tags=["pages"])
-def portfolio(request: Request, db: sqlite3.Connection = Depends(get_db)):
+def portfolio(request: Request, db: Connection = Depends(get_db)):
     """Every study in one table, with the six numbers that say whether to worry."""
     studies = db.execute(
-        """SELECT s.*,
+        f"""SELECT s.*,
                   (SELECT COUNT(*) FROM study_sites ss WHERE ss.study_id = s.id) AS site_count,
                   (SELECT COUNT(*) FROM queries q
                     WHERE q.study_id = s.id AND q.status != 'closed')            AS open_queries,
                   (SELECT COUNT(*) FROM adverse_events a
                     WHERE a.study_id = s.id AND a.serious = 1)                   AS saes,
-                  CAST(julianday(s.ec_expiry_date) - julianday(?) AS INTEGER)     AS ec_days
+                  {days_between('s.ec_expiry_date', '?')}                        AS ec_days
              FROM studies s
             ORDER BY s.id""",
         (kpi._today().isoformat(),),
@@ -395,7 +407,7 @@ def portfolio(request: Request, db: sqlite3.Connection = Depends(get_db)):
 
 
 @app.get("/study/{study_id}", response_class=HTMLResponse, tags=["pages"])
-def study_detail(study_id: str, request: Request, db: sqlite3.Connection = Depends(get_db)):
+def study_detail(study_id: str, request: Request, db: Connection = Depends(get_db)):
     study = db.execute("SELECT * FROM studies WHERE id = ?", (study_id,)).fetchone()
     if study is None:
         raise HTTPException(404, f"No study {study_id}")
@@ -454,13 +466,13 @@ def api_code(narrative: str):
 
 
 @app.get("/api/alerts", tags=["alerts"])
-def api_alerts(db: sqlite3.Connection = Depends(get_db)):
+def api_alerts(db: Connection = Depends(get_db)):
     return alerts.evaluate(db)
 
 
 @app.get("/ae", response_class=HTMLResponse, tags=["pages"])
 def adverse_events(
-    request: Request, filed: str | None = None, db: sqlite3.Connection = Depends(get_db)
+    request: Request, filed: str | None = None, db: Connection = Depends(get_db)
 ):
     """Adverse events, serious ones first, with their statutory clocks."""
     events = db.execute(
@@ -508,7 +520,7 @@ def file_adverse_event(
     causality: str = Form(...),
     outcome: str = Form(...),
     serious: bool = Form(False),
-    db: sqlite3.Connection = Depends(get_db),
+    db: Connection = Depends(get_db),
 ):
     """File an AE. The intake path the demo walks.
 
@@ -588,7 +600,7 @@ def file_adverse_event(
 
 @app.get("/signals", response_class=HTMLResponse, tags=["pages"])
 def safety_signals(
-    request: Request, min_cases: int = 2, db: sqlite3.Connection = Depends(get_db)
+    request: Request, min_cases: int = 2, db: Connection = Depends(get_db)
 ):
     """Coded terms over-represented in one study against the rest of the portfolio.
 
@@ -616,7 +628,7 @@ def safety_signals(
 
 
 @app.get("/api/signals", tags=["pv"])
-def api_signals(min_cases: int = signals.MIN_CASES, db: sqlite3.Connection = Depends(get_db)):
+def api_signals(min_cases: int = signals.MIN_CASES, db: Connection = Depends(get_db)):
     return {
         "method": "proportional reporting ratio",
         "threshold": {"prr": signals.PRR_THRESHOLD, "min_cases": signals.MIN_CASES},
@@ -630,7 +642,7 @@ def api_signals(min_cases: int = signals.MIN_CASES, db: sqlite3.Connection = Dep
 
 
 @app.get("/api/fhir/ResearchStudy/{study_id}", tags=["interoperability"])
-def fhir_research_study(study_id: str, db: sqlite3.Connection = Depends(get_db)):
+def fhir_research_study(study_id: str, db: Connection = Depends(get_db)):
     """A study as an HL7 FHIR R4 `ResearchStudy` resource."""
     study = db.execute("SELECT * FROM studies WHERE id = ?", (study_id,)).fetchone()
     if study is None:
@@ -639,7 +651,7 @@ def fhir_research_study(study_id: str, db: sqlite3.Connection = Depends(get_db))
 
 
 @app.get("/api/export/sdtm/dm.csv", tags=["export"])
-def export_sdtm_dm(study_id: str | None = None, db: sqlite3.Connection = Depends(get_db)):
+def export_sdtm_dm(study_id: str | None = None, db: Connection = Depends(get_db)):
     """The CDISC SDTM `DM` (Demographics) domain as CSV.
 
     One domain, not a submission package. It demonstrates the mapping — that the data
@@ -667,7 +679,7 @@ def audit_log(
     actor: str | None = None,
     date_from: str | None = None,
     date_to: str | None = None,
-    db: sqlite3.Connection = Depends(get_db),
+    db: Connection = Depends(get_db),
 ):
     """The audit trail, newest first, with the chain verification result on the page.
 

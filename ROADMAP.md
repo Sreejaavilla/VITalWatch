@@ -360,8 +360,10 @@ Each of these is a decision, not an omission.
 one coding function, so a licensed dictionary is a drop-in swap.
 - **Live EDC / HIS / ABDM integration** — requires partner systems and credentials that do not
 exist at a hackathon. Interoperability is shown structurally with FHIR R4-shaped resources.
-- **PostgreSQL and multi-user deployment** — SQLite with data access behind one module; the swap
-is a config change. Correct for a single-node demo, explicitly not the production posture.
+- ~~**PostgreSQL and multi-user deployment**~~ — **done.** Supabase Postgres, selected by
+`DATABASE_URL`; the swap was one module, as predicted. SQLite remains as the offline fallback.
+What is still deferred is the *operational* half: private networking, a retention policy, and a
+rehearsed restore.
 - **Enforced role-based access control** — three role *views* are built (`/role/{id}`) and
 restrict nothing; authentication and server-side enforcement are the first thing built after
 the hackathon. The views are a domain judgement about what each reader needs; the enforcement

@@ -26,6 +26,11 @@ for path in /health /portfolio /study/STU-004 /ae /signals /audit \
 done
 
 echo
+# Which engine is actually serving. "The database is in the cloud" is a claim the
+# deployment should be able to answer for itself.
+echo "backend:"
+curl -s --max-time 30 "${BASE}/health"
+echo
 echo "audit chain:"
 curl -s --max-time 30 "${BASE}/api/audit/verify"
 echo

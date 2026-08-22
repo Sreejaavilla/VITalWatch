@@ -31,7 +31,7 @@ number in statistics it cannot support.
 
 from __future__ import annotations
 
-import sqlite3
+from .db import Connection  # driver-neutral: SQLite or Postgres
 from dataclasses import dataclass
 
 #: Minimum cases before a ratio is worth showing. Below this the PRR is arithmetic
@@ -87,7 +87,7 @@ class Signal:
         }
 
 
-def detect(conn: sqlite3.Connection, min_cases: int = MIN_CASES) -> list[Signal]:
+def detect(conn: Connection, min_cases: int = MIN_CASES) -> list[Signal]:
     """Rank every study-and-term pair by PRR, strongest first.
 
     Uncoded events are excluded from both sides of the ratio rather than counted as a
@@ -123,7 +123,9 @@ def detect(conn: sqlite3.Connection, min_cases: int = MIN_CASES) -> list[Signal]
                   SUM(CASE WHEN a.severity = 'severe' THEN 1 ELSE 0 END) AS severe
              FROM adverse_events a JOIN studies s ON s.id = a.study_id
             WHERE a.coded_term IS NOT NULL
-            GROUP BY a.study_id, a.coded_term, a.coded_code
+            -- s.title is grouped explicitly rather than left bare: SQLite allows a
+            -- non-aggregated column here and Postgres rejects it.
+            GROUP BY a.study_id, s.title, a.coded_term, a.coded_code
            HAVING COUNT(*) >= ?""",
         (min_cases,),
     ):

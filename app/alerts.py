@@ -12,9 +12,10 @@ alert — people learn to ignore the banner.
 
 from __future__ import annotations
 
-import sqlite3
+from .db import Connection  # driver-neutral: SQLite or Postgres
 from datetime import date
 
+from . import db
 from .config import settings
 from .kpi import ACTIVE_STATUSES, ENROLMENT_WINDOW_DAYS, _today
 from .models import Alert, AlertRule, AlertSeverity, utcnow
@@ -29,7 +30,7 @@ ENROLLING_STATUSES = ("screening", "enrolling", "follow_up")
 SEVERITY_ORDER = {AlertSeverity.CRITICAL: 0, AlertSeverity.WARNING: 1, AlertSeverity.INFO: 2}
 
 
-def enrolment_lag(conn: sqlite3.Connection) -> list[Alert]:
+def enrolment_lag(conn: Connection) -> list[Alert]:
     """Studies recruiting below `ENROLMENT_LAG_PCT` of where the plan says they should be.
 
     Measured against plan-to-date, not against the final target. A study four months into
@@ -71,7 +72,7 @@ def enrolment_lag(conn: sqlite3.Connection) -> list[Alert]:
     return out
 
 
-def ethics_renewal_due(conn: sqlite3.Connection) -> list[Alert]:
+def ethics_renewal_due(conn: Connection) -> list[Alert]:
     """Ethics approvals expiring within `ETHICS_RENEWAL_DAYS`, or already expired.
 
     An expired approval is not a reminder, it is a stop-work condition: the study has no
@@ -82,7 +83,7 @@ def ethics_renewal_due(conn: sqlite3.Connection) -> list[Alert]:
     placeholders = ",".join("?" * len(ACTIVE_STATUSES))
 
     for s in conn.execute(
-        f"""SELECT *, CAST(julianday(ec_expiry_date) - julianday(?) AS INTEGER) AS days_left
+        f"""SELECT *, {db.days_between('ec_expiry_date', '?')} AS days_left
               FROM studies
              WHERE status IN ({placeholders}) AND ec_expiry_date IS NOT NULL""",
         (today.isoformat(), *ACTIVE_STATUSES),
@@ -113,7 +114,7 @@ def ethics_renewal_due(conn: sqlite3.Connection) -> list[Alert]:
     return out
 
 
-def monitoring_visit_overdue(conn: sqlite3.Connection) -> list[Alert]:
+def monitoring_visit_overdue(conn: Connection) -> list[Alert]:
     """Monitoring visits more than `MONITORING_OVERDUE_DAYS` past schedule and not done.
 
     One alert per study rather than one per visit. Twelve rows saying the same thing
@@ -154,7 +155,7 @@ def monitoring_visit_overdue(conn: sqlite3.Connection) -> list[Alert]:
 RULES = (enrolment_lag, ethics_renewal_due, monitoring_visit_overdue)
 
 
-def evaluate(conn: sqlite3.Connection) -> list[Alert]:
+def evaluate(conn: Connection) -> list[Alert]:
     """Run every rule and return the alerts, most severe first."""
     raised = [alert for rule in RULES for alert in rule(conn)]
     return sorted(raised, key=lambda a: (SEVERITY_ORDER[a.severity], a.study_id))

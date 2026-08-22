@@ -26,7 +26,7 @@ from __future__ import annotations
 import csv
 import difflib
 import re
-import sqlite3
+from .db import Connection  # driver-neutral: SQLite or Postgres
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from functools import lru_cache
@@ -199,7 +199,7 @@ def code_best(narrative: str) -> CodingResult | None:
     return results[0] if results else None
 
 
-def code_uncoded_events(conn: sqlite3.Connection, commit: bool = True) -> int:
+def code_uncoded_events(conn: Connection, commit: bool = True) -> int:
     """Code every adverse event that has no term yet. Returns how many were coded.
 
     Used by the seeder, and safe to re-run: an event that already has a term is left

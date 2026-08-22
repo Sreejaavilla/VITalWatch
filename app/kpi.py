@@ -12,9 +12,10 @@ will define differently and then disagree about on stage.
 
 from __future__ import annotations
 
-import sqlite3
+from .db import Connection  # driver-neutral: SQLite or Postgres
 from datetime import date
 
+from . import db
 from .config import settings
 from .datagen import TODAY
 from .models import PortfolioKPI, StudyKPI, utcnow
@@ -44,14 +45,14 @@ def _today() -> date:
     return TODAY
 
 
-def _scalar(conn: sqlite3.Connection, sql: str, params: tuple = ()) -> int:
+def _scalar(conn: Connection, sql: str, params: tuple = ()) -> int:
     return conn.execute(sql, params).fetchone()[0] or 0
 
 
 # ------------------------------------------------------------------ shared pieces
 
 
-def _open_queries(conn: sqlite3.Connection, study_id: str | None = None) -> int:
+def _open_queries(conn: Connection, study_id: str | None = None) -> int:
     """Queries raised and not yet closed. An answered-but-not-closed query is still open —
     someone still has to accept the answer."""
     where = "status != 'closed'"
@@ -60,7 +61,7 @@ def _open_queries(conn: sqlite3.Connection, study_id: str | None = None) -> int:
     return _scalar(conn, f"SELECT COUNT(*) FROM queries WHERE {where}")
 
 
-def _overdue_monitoring_visits(conn: sqlite3.Connection, study_id: str | None = None) -> int:
+def _overdue_monitoring_visits(conn: Connection, study_id: str | None = None) -> int:
     """Monitoring visits that are outstanding, on either of two counts:
 
     * scheduled more than `monitoring_overdue_days` ago and never conducted, or
@@ -81,7 +82,7 @@ def _overdue_monitoring_visits(conn: sqlite3.Connection, study_id: str | None = 
     return _scalar(conn, sql, (cutoff,))
 
 
-def _open_saes(conn: sqlite3.Connection, study_id: str | None = None) -> int:
+def _open_saes(conn: Connection, study_id: str | None = None) -> int:
     placeholders = ",".join("?" * len(OPEN_SAE_OUTCOMES))
     sql = f"SELECT COUNT(*) FROM adverse_events WHERE serious = 1 AND outcome IN ({placeholders})"
     if study_id:
@@ -98,7 +99,7 @@ def _td(days: int):
 # --------------------------------------------------------------------- portfolio
 
 
-def portfolio_kpi(conn: sqlite3.Connection) -> PortfolioKPI:
+def portfolio_kpi(conn: Connection) -> PortfolioKPI:
     """The six headline numbers, plus the two totals they are read against."""
     placeholders = ",".join("?" * len(ACTIVE_STATUSES))
     active = conn.execute(
@@ -109,7 +110,9 @@ def portfolio_kpi(conn: sqlite3.Connection) -> PortfolioKPI:
         ACTIVE_STATUSES,
     ).fetchone()
     sites = conn.execute(
-        "SELECT COUNT(*) AS total, SUM(status = 'activated') AS activated FROM sites"
+        # CASE rather than SUM(status = 'activated'): Postgres will not sum a boolean.
+        "SELECT COUNT(*) AS total, "
+        "SUM(CASE WHEN status = 'activated' THEN 1 ELSE 0 END) AS activated FROM sites"
     ).fetchone()
 
     return PortfolioKPI(
@@ -128,7 +131,7 @@ def portfolio_kpi(conn: sqlite3.Connection) -> PortfolioKPI:
 # ------------------------------------------------------------------------- study
 
 
-def study_kpi(conn: sqlite3.Connection, study_id: str) -> StudyKPI | None:
+def study_kpi(conn: Connection, study_id: str) -> StudyKPI | None:
     """Per-study drill-down. Returns None if the study does not exist."""
     study = conn.execute("SELECT * FROM studies WHERE id = ?", (study_id,)).fetchone()
     if study is None:
@@ -166,9 +169,12 @@ def study_kpi(conn: sqlite3.Connection, study_id: str) -> StudyKPI | None:
     )
 
     ageing = conn.execute(
-        "SELECT AVG(julianday(?) - julianday(raised_date)) FROM queries WHERE study_id = ? AND status != 'closed'",
+        f"SELECT AVG({db.days_between('?', 'raised_date')}) FROM queries "
+        "WHERE study_id = ? AND status != 'closed'",
         (today.isoformat(), study_id),
     ).fetchone()[0]
+    # Postgres AVG returns Decimal; float() keeps the value the same shape on both engines.
+    ageing = float(ageing) if ageing is not None else None
 
     deviations = _scalar(conn, "SELECT COUNT(*) FROM deviations WHERE study_id = ?", (study_id,))
     site_count = _scalar(conn, "SELECT COUNT(*) FROM study_sites WHERE study_id = ?", (study_id,))

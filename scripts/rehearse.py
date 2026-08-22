@@ -42,8 +42,21 @@ class Check:
 
 
 def reseed() -> None:
-    db = ROOT / "data" / "ctms.db"
-    db.unlink(missing_ok=True)
+    """Back to the pristine seed, whichever engine is configured.
+
+    On SQLite that is deleting the file. On Postgres it is dropping the tables — the
+    same operation, and it has to happen here rather than being assumed, or a rehearsal
+    against Supabase would silently be checking a database it never reset.
+    """
+    from app import db as database
+
+    if database.is_postgres():
+        conn = database.connect()
+        database.reset(conn)
+        conn.close()
+    else:
+        (ROOT / "data" / "ctms.db").unlink(missing_ok=True)
+
     subprocess.run(
         [str(ROOT / ".venv" / "bin" / "python"), "-m", "app.db"],
         cwd=ROOT, check=True, capture_output=True,
@@ -51,6 +64,7 @@ def reseed() -> None:
 
 
 def run_once(run_no: int) -> list[str]:
+    from app import db
     from app.main import app
 
     print(f"\n\033[1mrun {run_no}\033[0m — fresh database")
@@ -162,8 +176,25 @@ def run_once(run_no: int) -> list[str]:
         check("audit page renders", c.get("/audit?verify=1").status_code, 200)
         check("audit filters by actor", "1 of 9" in c.get("/audit?actor=demo.operator").text)
 
-        # ---- beat 6: tamper detection
-        conn.execute("DROP TRIGGER audit_events_no_update")
+        # ---- beat 6, first half: the storage layer refuses the edit outright.
+        # Engine-dependent since the move to Postgres — SQLite raises from a trigger
+        # body, Postgres from a trigger function — so it gets asserted rather than
+        # assumed. This is what the demo claims out loud before anything is dropped.
+        for operation, sql in (
+            ("UPDATE", "UPDATE audit_events SET actor='mallory' WHERE seq=1"),
+            ("DELETE", "DELETE FROM audit_events WHERE seq=1"),
+        ):
+            try:
+                conn.execute(sql)
+                conn.commit()
+                refused = ""
+            except Exception as exc:  # noqa: BLE001 — any refusal is the pass condition
+                refused = str(exc)
+                conn.rollback()
+            check(f"storage layer refuses {operation}", "append-only" in refused)
+
+        # ---- beat 6, second half: drop the guard, and the chain still catches it
+        db.drop_audit_guard(conn)
         conn.execute("UPDATE audit_events SET after_json='{}' WHERE seq=3")
         conn.commit()
         broken = c.get("/api/audit/verify").json()

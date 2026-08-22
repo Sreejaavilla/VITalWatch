@@ -17,6 +17,7 @@ you can destroy and rebuild on stage is a demo you can give honestly.
         │   FastAPI  ·  one process     │
         │                               │
         │   main.py    routes, pages    │
+        │   db.py      sqlite | postgres │
         │   kpi.py     computed metrics │
         │   roles.py   per-role lenses  │
         │   alerts.py  threshold rules  │
@@ -24,11 +25,13 @@ you can destroy and rebuild on stage is a demo you can give honestly.
         │   audit.py   hash chain       │
         │   models.py  pydantic schema  │
         └───────────────┬───────────────┘
-                        │  sqlite3
-              ┌─────────▼─────────┐
-              │  data/ctms.db     │  append-only triggers
-              │  11 tables        │  on audit_events
-              └───────────────────┘
+                        │  DATABASE_URL selects one
+             ┌──────────┴──────────┐
+             ▼                     ▼
+   ┌───────────────────┐  ┌───────────────────┐
+   │ Supabase Postgres │  │  data/ctms.db     │  append-only guard
+   │ 11 tables · RLS   │  │  SQLite fallback  │  on audit_events,
+   └───────────────────┘  └───────────────────┘  enforced on both
                         ▲
               app/datagen.py  ·  fixed seed 20260822
               app/terms.csv   ·  72 curated terms
@@ -58,12 +61,13 @@ The guarantee has two layers, and the second is the one that matters:
 ## The three swap points
 
 Say these on the slide. Each is a boundary chosen so that production readiness is a substitution
-rather than a rewrite.
+rather than a rewrite. **One of the three has since been taken**, which is the useful thing to
+say about it: the boundary held, and the swap cost a driver rather than a rewrite.
 
 | Boundary | Today | Production | What changes |
 |---|---|---|---|
 | **Vocabulary** | `app/terms.csv`, 72 curated terms | MedDRA / WHODrug under licence | The file. `code()` is unchanged — it takes a vocabulary and returns a term, a code and a confidence |
-| **Storage** | SQLite, one file | PostgreSQL | The connection in `db.py`. The schema is ordinary SQL; Postgres enforces more of it, not less |
+| **Storage** | ~~SQLite, one file~~ **Supabase Postgres** | Postgres with a private network and backups | **Done.** `DATABASE_URL` selects the engine; SQLite remains as the offline fallback. Both run the same queries and produce the same audit head hash |
 | **Identity** | one fixed demo actor | authenticated session | The `actor` argument at each `audit.record()` call site. Every mutation already flows through one audited path, so there is exactly one field to populate |
 
 ## Configuration

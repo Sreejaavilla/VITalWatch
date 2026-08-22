@@ -17,7 +17,19 @@ class Settings(BaseSettings):
     app_name: str = "VITalWatch"
     org_name: str = "All India Institute of Ayurveda — NPvCC"
 
-    #: SQLite file. Generated on first run; never committed.
+    #: Postgres connection string. Set it (Supabase) and every query runs against
+    #: Postgres; leave it unset and the same queries run against the SQLite file below.
+    #: Use a Supabase *pooler* URL — the direct db.<ref>.supabase.co host is IPv6-only
+    #: and most free hosting tiers, Render included, cannot reach it.
+    database_url: str | None = None
+    #: Connections held open against Postgres. Supabase's free tier is not generous
+    #: with these, and one process serving one demo does not need many.
+    db_pool_max: int = 5
+    #: Seconds to wait for Postgres before giving up. A demo that hangs is worse than
+    #: one that says it cannot connect.
+    db_connect_timeout: int = 10
+
+    #: SQLite file, used when DATABASE_URL is unset. Generated on first run; never committed.
     db_path: Path = ROOT / "data" / "ctms.db"
     #: Rows generated on an empty database.
     seed_studies: int = 8

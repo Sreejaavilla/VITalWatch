@@ -17,7 +17,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-import sqlite3
+from .db import Connection, Row  # driver-neutral: SQLite or Postgres
 import uuid
 from typing import Any
 
@@ -33,7 +33,7 @@ def compute_hash(payload: dict[str, Any], prev_hash: str) -> str:
     return hashlib.sha256((canonical_json(payload) + prev_hash).encode("utf-8")).hexdigest()
 
 
-def _payload(row: sqlite3.Row | dict[str, Any]) -> dict[str, Any]:
+def _payload(row: Row | dict[str, Any]) -> dict[str, Any]:
     """The hashed fields. `hash` and `prev_hash` are excluded — one is the output, the
     other is mixed in separately."""
     return {
@@ -49,14 +49,14 @@ def _payload(row: sqlite3.Row | dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def head(conn: sqlite3.Connection) -> tuple[int, str]:
+def head(conn: Connection) -> tuple[int, str]:
     """Sequence number and hash of the last row. `(0, GENESIS_HASH)` on an empty chain."""
     row = conn.execute("SELECT seq, hash FROM audit_events ORDER BY seq DESC LIMIT 1").fetchone()
     return (row["seq"], row["hash"]) if row else (0, GENESIS_HASH)
 
 
 def record(
-    conn: sqlite3.Connection,
+    conn: Connection,
     *,
     actor: str,
     action: AuditAction | str,
@@ -108,7 +108,7 @@ def record(
     )
 
 
-def verify(conn: sqlite3.Connection) -> dict[str, Any]:
+def verify(conn: Connection) -> dict[str, Any]:
     """Walk the chain from genesis.
 
     Returns `{"ok": True, "count": n}`, or `ok: False` with the sequence number of the
