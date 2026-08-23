@@ -8,13 +8,13 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  {# IBM Plex: a typeface drawn for a technical institution, and the reason the mono
-     matters here — in a schema with no patient names, the coded identifier is the
-     record, so codes are set as first-class objects rather than incidental spans. #}
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  {# Inter for everything a person reads, IBM Plex Mono for everything a machine
+     assigned. In a schema with no patient names the coded identifier is the record,
+     so codes stay set as first-class objects rather than incidental spans. #}
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
-    :root { font-family: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
-    h1, h2, h3 { letter-spacing: -.019em; }
+    :root { font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+    h1, h2, h3 { letter-spacing: -.022em; font-weight: 700; }
   </style>
   <link rel="icon" href="/static/mark.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/static/app.css">
@@ -30,7 +30,7 @@
       <img src="/static/mark.svg" alt="" width="32" height="32" class="h-9 w-9 shrink-0">
       <span class="leading-tight">
         <span class="block text-[15px] font-semibold tracking-tight text-white">{{ settings.app_name }}</span>
-        <span class="label mt-0.5 block" style="color:#7ea6ff">Clinical trials · PV</span>
+        <span class="mt-0.5 block text-[10.5px] font-semibold uppercase tracking-[.1em]" style="color:var(--institution-hi)">Clinical trials · PV</span>
       </span>
     </a>
 
@@ -56,11 +56,11 @@
     </nav>
 
     <div class="border-t border-white/10 px-4 py-3">
-      <div class="flex items-center gap-2 text-[11px]" style="color:#cfe0ec">
-        <span class="h-1.5 w-1.5 rounded-full" style="background:#e0a350"></span>
+      <div class="flex items-center gap-2 text-[11px]" style="color:#cbd5e1">
+        <span class="h-1.5 w-1.5 rounded-full" style="background:var(--review-hi);box-shadow:0 0 0 3px rgba(251,191,36,.2)"></span>
         Synthetic data only
       </div>
-      <p class="mt-1 text-[10.5px] leading-relaxed" style="color:#7ea6ff">
+      <p class="mt-1 text-[10.5px] leading-relaxed" style="color:var(--institution-hi)">
         {{ settings.org_name }}
       </p>
     </div>

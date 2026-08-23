@@ -59,7 +59,7 @@
   <section class="panel">
     <div class="panel-head"><span class="panel-title">Sites <span class="text-slate-400">({{ sites|length }})</span></span></div>
     <div class="tbl-scroll"><table class="tbl">
-      <tbody class="divide-y divide-slate-100">
+      <tbody>
         {% for s in sites %}
         <tr>
           <td class="px-5 py-3">
@@ -67,7 +67,7 @@
             <div class="text-xs text-slate-500">{{ s.city }}, {{ s.state }} · {{ s.pi_name }}</div>
           </td>
           <td class="px-5 py-3 text-right">
-            {{ badge(s.status|capitalize, 'good' if s.status == 'activated' else 'warn') }}
+            {{ badge(s.status|capitalize, 'good' if s.status == 'activated' else 'warn-soft') }}
           </td>
           <td class="px-5 py-3 text-right text-xs tabular-nums text-slate-600">
             {{ s.enrolled_here }} subjects
@@ -106,7 +106,7 @@
           <th class="px-5 py-2 font-medium">Reported to EC</th>
         </tr>
       </thead>
-      <tbody class="divide-y divide-slate-100">
+      <tbody>
         {% for d in deviations %}
         <tr>
           <td class="px-5 py-2.5 text-xs tabular-nums text-slate-500">{{ d.detected_date | d }}</td>
@@ -134,14 +134,14 @@
   <section class="panel lg:col-span-2">
     <div class="panel-head"><span class="panel-title">Open data queries <span class="text-slate-400">({{ queries|length }})</span></span></div>
     <div class="tbl-scroll"><table class="tbl">
-      <tbody class="divide-y divide-slate-100">
+      <tbody>
         {% for q in queries %}
         <tr>
           <td class="px-5 py-2.5 text-xs tabular-nums text-slate-500">{{ q.raised_date | d }}</td>
           <td class="px-5 py-2.5 font-mono text-xs text-slate-700">{{ q.field }}</td>
           <td class="px-5 py-2.5 text-slate-600">{{ q.question }}</td>
           <td class="px-5 py-2.5 text-xs text-slate-500">{{ q.subject_code }}</td>
-          <td class="px-5 py-2.5 text-right">{{ badge(q.status|capitalize, 'warn' if q.status == 'open' else 'info') }}</td>
+          <td class="px-5 py-2.5 text-right">{{ badge(q.status|capitalize, 'warn-soft' if q.status == 'open' else 'info') }}</td>
         </tr>
         {% else %}
         <tr><td colspan="5" class="px-5 py-4 text-sm text-slate-400">No open queries.</td></tr>

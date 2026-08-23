@@ -21,7 +21,7 @@
 {% if alerts %}
 <section class="mt-8 panel overflow-hidden">
   <div class="panel-head">
-    <h2 class="text-sm font-medium text-slate-700">
+    <h2 class="panel-title">
       Alerts <span class="text-slate-400">({{ alerts|length }})</span>
     </h2>
     <span class="text-xs text-slate-400">
@@ -30,20 +30,22 @@
       monitoring &gt;{{ settings.monitoring_overdue_days }}d — all set in .env
     </span>
   </div>
-  <ul class="divide-y divide-slate-100">
+  {# Same queue component as the role dashboards: severity carried twice, once as a
+     filled badge and once as the left edge, so the shape of the list reads before
+     any of it is. #}
+  <ul class="divide-y" style="border-color: var(--rule)">
     {% for a in alerts %}
-    {% set tone = {'critical': 'bg-[color:var(--breach)]', 'warning': 'bg-[color:var(--review)]'}.get(a.severity.value, 'bg-[color:var(--reference)]') %}
     <li>
-      <a href="{{ a.deep_link }}" class="flex items-start gap-3 px-3.5 py-2 hover:bg-slate-50">
-        <span class="mt-1.5 h-2 w-2 shrink-0 rounded-full {{ tone }}"></span>
-        <span class="flex-1 text-sm">
+      <a href="{{ a.deep_link }}" class="alert alert-{{ a.severity.value }} items-start">
+        <span class="mt-px shrink-0">{{ badge(a.severity.value|capitalize, {'critical':'bad','warning':'warn'}.get(a.severity.value,'info')) }}</span>
+        <span class="flex-1">
           <span class="text-slate-800">{{ a.message }}</span>
           <span class="mt-0.5 block text-xs text-slate-500">
             {{ a.study_id }} · {{ a.study_title }} · rule
-            <code class="font-mono">{{ a.rule.value }}</code>
+            <code class="code">{{ a.rule.value }}</code>
           </span>
         </span>
-        <span class="shrink-0 text-xs text-slate-300">→</span>
+        <span class="alert-rule">→</span>
       </a>
     </li>
     {% endfor %}
@@ -63,17 +65,17 @@
         <th>Phase</th>
         <th>Status</th>
         <th>CTRI</th>
-        <th class="px-4 py-3 font-medium w-48">Enrolment</th>
+        <th>Enrolment</th>
         <th class="num">Sites</th>
         <th class="num">Queries</th>
         <th class="num">SAEs</th>
         <th>EC expiry</th>
       </tr>
     </thead>
-    <tbody class="divide-y divide-slate-100">
+    <tbody>
       {% for s in studies %}
-      <tr class="hover:bg-slate-50">
-        <td>
+      <tr>
+        <td class="cell-title">
           <a href="/study/{{ s.id }}" class="font-medium text-slate-900 hover:text-[color:var(--reference)]">{{ s.title }}</a>
           <div class="text-xs text-slate-500">{{ s.id }} · {{ s.protocol_no }} · {{ s.pi_name }}</div>
         </td>
@@ -87,7 +89,7 @@
             {{ badge('Not registered', 'bad') }}
           {% endif %}
         </td>
-        <td>
+        <td class="cell-ref">
           <div class="flex items-center gap-2">
             <div class="flex-1">{{ ref(s.actual_enrolment, s.target_enrolment, plan.get(s.id)) }}</div>
             <span class="w-16 text-right text-xs tabular-nums text-slate-600">

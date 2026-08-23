@@ -18,14 +18,14 @@
     {% for r in all_roles %}
       <a href="/role/{{ r.id }}"
          class="rounded border px-3 py-1.5 text-[12.5px] transition
-                {% if r.id == role.id %}border-[color:var(--institution)] bg-[color:var(--institution)] font-medium text-white
+                {% if r.id == role.id %}border-[color:var(--reference)] bg-[color:var(--reference)] font-medium text-white
                 {% else %}border-slate-300 bg-white text-slate-600 hover:border-slate-400 hover:text-slate-900{% endif %}">
         {{ r.name }}
       </a>
     {% endfor %}
 
     {% if role.id == 'investigator' and pis %}
-      <form method="get" action="/role/investigator" class="ml-auto flex items-center gap-2">
+      <form method="get" action="/role/investigator" class="flex items-center gap-2 sm:ml-auto">
         <label class="text-[11px] uppercase tracking-wider text-slate-500" for="pi">Investigator</label>
         <select id="pi" name="pi" onchange="this.form.submit()"
                 class="field">
@@ -44,19 +44,20 @@
   </p>
 </div>
 
-{# The six figures this reader opens the system for. #}
-{% set tones = {'neutral':'border-slate-200','good':'border-emerald-300','warn':'border-amber-300','bad':'border-red-300'} %}
-<div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+{# The six figures this reader opens the system for. Rendered through the shared
+   metric component so a tone means the same thing here as on every other screen. #}
+{% set skin = {'neutral':'', 'good':'metric-within', 'warn':'metric-review', 'bad':'metric-breach'} %}
+<div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
   {% for m in metrics %}
     {% set body %}
-      <div class="text-[11px] uppercase tracking-wide text-slate-500">{{ m.label }}</div>
-      <div class="mt-1 text-[28px] font-semibold leading-none tabular-nums text-slate-900">{{ m.value }}</div>
-      {% if m.sub %}<div class="mt-1.5 text-[11.5px] leading-relaxed text-slate-500">{{ m.sub }}</div>{% endif %}
+      <div class="label">{{ m.label }}</div>
+      <div class="metric-value mt-1.5 tabular-nums">{{ m.value }}</div>
+      {% if m.sub %}<div class="metric-sub">{{ m.sub }}</div>{% endif %}
     {% endset %}
     {% if m.href %}
-      <a href="{{ m.href }}" class="rounded border bg-white p-4 transition hover:border-slate-400 {{ tones[m.tone] }}">{{ body }}</a>
+      <a href="{{ m.href }}" class="metric {{ skin[m.tone] }}">{{ body }}</a>
     {% else %}
-      <div class="rounded border bg-white p-4 {{ tones[m.tone] }}">{{ body }}</div>
+      <div class="metric {{ skin[m.tone] }}">{{ body }}</div>
     {% endif %}
   {% endfor %}
 </div>
@@ -81,16 +82,16 @@
   {% if alerts %}
   <section class="mt-6 panel overflow-hidden">
     <div class="panel-head">
-      <span class="text-sm font-medium text-slate-700">Needs your attention</span>
+      <span class="panel-title">Needs your attention</span>
       <span class="text-xs text-slate-400">{{ alerts|length }} on your studies</span>
     </div>
-    <ul class="divide-y divide-slate-100">
+    <ul class="divide-y" style="border-color:var(--rule)">
       {% for a in alerts %}
-      <li class="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 text-[13px]">
+      <li class="alert alert-{{ a.severity.value }}">
         {{ badge(a.severity.value|capitalize, {'critical':'bad','warning':'warn'}.get(a.severity.value,'info')) }}
-        <a href="{{ a.deep_link }}" class="font-medium text-slate-700 hover:text-[color:var(--institution)]">{{ a.study_id }}</a>
+        <a href="{{ a.deep_link }}" class="alert-study">{{ a.study_id }}</a>
         <span class="text-slate-600">{{ a.message }}</span>
-        <span class="ml-auto text-xs text-slate-400">{{ a.rule.value|label }}</span>
+        <span class="alert-rule">{{ a.rule.value|label }}</span>
       </li>
       {% endfor %}
     </ul>
@@ -99,7 +100,7 @@
 
   <section class="mt-4 panel overflow-hidden">
     <div class="panel-head">
-      <span class="text-sm font-medium text-slate-700">My studies</span>
+      <span class="panel-title">My studies</span>
       <span class="text-xs text-slate-400">{{ scope }}</span>
     </div>
     <div class="tbl-scroll"><table class="tbl">
@@ -110,12 +111,12 @@
           <th class="num">Queries</th><th class="num">Open SAEs</th><th>CTRI</th>
         </tr>
       </thead>
-      <tbody class="divide-y divide-slate-100">
+      <tbody>
         {% for row in studies %}
         {% set s = row.study %}
-        <tr class="hover:bg-slate-50">
+        <tr>
           <td>
-            <a href="/study/{{ s.id }}" class="font-medium text-slate-700 hover:text-[color:var(--institution)]">{{ s.id }}</a>
+            <a href="/study/{{ s.id }}" class="font-medium text-slate-700 hover:text-[color:var(--reference)]">{{ s.id }}</a>
             <div class="max-w-sm truncate text-xs text-slate-500">{{ s.title }}</div>
           </td>
           <td>{{ badge(s.status|label, 'info') }}</td>
@@ -158,7 +159,7 @@
 
   <section class="mt-6 panel overflow-hidden">
     <div class="panel-head">
-      <span class="text-sm font-medium text-slate-700">Reporting worklist</span>
+      <span class="panel-title">Reporting worklist</span>
       <span class="text-xs text-slate-400">serious events, soonest statutory deadline first</span>
     </div>
     <div class="tbl-scroll"><table class="tbl">
@@ -168,9 +169,9 @@
           <th>Coded term</th><th>Severity</th><th>Causality</th><th>Outcome</th>
         </tr>
       </thead>
-      <tbody class="divide-y divide-slate-100">
+      <tbody>
         {% for e in worklist %}
-        <tr class="{{ 'bg-[color:var(--breach-bg)]' if e.timeline_status == 'breached' else '' }} hover:bg-slate-50">
+        <tr class="{{ 'row-breach' if e.timeline_status == 'breached' else '' }}">
           <td>
             {% if e.timeline_status == 'breached' %}{{ badge('Breached', 'bad') }}
             {% elif e.timeline_status == 'due_soon' %}{{ badge('Due soon', 'warn') }}
@@ -204,7 +205,7 @@
 
   <section class="mt-4 panel overflow-hidden">
     <div class="panel-head">
-      <span class="text-sm font-medium text-slate-700">
+      <span class="panel-title">
         Disproportionality screen
         {% if signals_total > signals|length %}
           <span class="ml-1 font-normal text-slate-400">top {{ signals|length }} of {{ signals_total }}</span>
@@ -219,9 +220,9 @@
           <th class="num">Cases</th><th class="num">PRR</th><th>Screen</th>
         </tr>
       </thead>
-      <tbody class="divide-y divide-slate-100">
+      <tbody>
         {% for s in signals %}
-        <tr class="hover:bg-slate-50">
+        <tr>
           <td>
             <span class="text-slate-700">{{ s.coded_term }}</span>
             <span class="block font-mono text-xs text-slate-400">{{ s.coded_code }}</span>
@@ -259,16 +260,16 @@
   <div class="mt-6 grid gap-4 lg:grid-cols-[1.6fr_1fr]">
     <section class="panel overflow-hidden">
       <div class="panel-head">
-        <span class="text-sm font-medium text-slate-700">Portfolio risk register</span>
+        <span class="panel-title">Portfolio risk register</span>
         <span class="text-xs text-slate-400">{{ alerts|length }} alerts, most severe first</span>
       </div>
-      <ul class="divide-y divide-slate-100">
+      <ul class="divide-y" style="border-color:var(--rule)">
         {% for a in alerts %}
-        <li class="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 text-[13px]">
+      <li class="alert alert-{{ a.severity.value }}">
           {{ badge(a.severity.value|capitalize, {'critical':'bad','warning':'warn'}.get(a.severity.value,'info')) }}
-          <a href="{{ a.deep_link }}" class="font-medium text-slate-700 hover:text-[color:var(--institution)]">{{ a.study_id }}</a>
+          <a href="{{ a.deep_link }}" class="alert-study">{{ a.study_id }}</a>
           <span class="text-slate-600">{{ a.message }}</span>
-          <span class="ml-auto text-xs text-slate-400">{{ a.rule.value|label }}</span>
+          <span class="alert-rule">{{ a.rule.value|label }}</span>
         </li>
         {% endfor %}
         {% if not alerts %}
@@ -278,13 +279,13 @@
     </section>
 
     <section class="panel p-5">
-      <h2 class="text-[13px] font-semibold text-slate-700">Inspection readiness</h2>
+      <h2 class="panel-title">Inspection readiness</h2>
       <dl class="mt-3 space-y-3">
         {% for label, value, href, definition in posture %}
         <div>
           <div class="flex items-baseline justify-between gap-3">
             <dt class="text-[12.5px] text-slate-700">
-              <a href="{{ href }}" class="hover:text-[color:var(--institution)] hover:underline">{{ label }}</a>
+              <a href="{{ href }}" class="hover:text-[color:var(--reference)] hover:underline">{{ label }}</a>
             </dt>
             <dd class="text-[14px] font-semibold tabular-nums text-slate-900">{{ value }}</dd>
           </div>

@@ -16,7 +16,8 @@
 
 {% set TONES = {
   'neutral': 'neutral', 'good': 'within', 'warn': 'review', 'bad': 'breach',
-  'info': 'neutral', 'ref': 'ref'
+  'info': 'neutral', 'ref': 'ref',
+  'bad-soft': 'breach-soft', 'warn-soft': 'review-soft'
 } %}
 
 {# An identifier — a study id, subject code, CTRI number, controlled term, hash.
@@ -38,7 +39,7 @@
 {% endmacro %}
 
 {% macro severity_badge(severity) %}
-  {{ badge(severity|capitalize, {'critical':'bad','severe':'bad','major':'warn','moderate':'warn'}.get(severity, 'neutral')) }}
+  {{ badge(severity|capitalize, {'critical':'bad-soft','severe':'bad-soft','major':'warn-soft','moderate':'warn-soft'}.get(severity, 'neutral')) }}
 {% endmacro %}
 
 {# ---------------------------------------------------------------------------

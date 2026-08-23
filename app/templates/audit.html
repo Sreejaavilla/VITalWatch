@@ -63,7 +63,7 @@
 
 <div class="mt-4 panel overflow-hidden">
   <div class="panel-head">
-    <span class="text-sm font-medium text-slate-700">
+    <span class="panel-title">
       {% if filtered %}
         {{ matched }} of {{ total }} event{{ '' if total == 1 else 's' }}
       {% else %}
@@ -86,7 +86,7 @@
         <th>Hash</th>
       </tr>
     </thead>
-    <tbody class="divide-y divide-slate-100">
+    <tbody>
       {% for e in events %}
       <tr class="align-top hover:bg-slate-50">
         <td class="text-right tabular-nums text-slate-400">{{ e.seq }}</td>

@@ -80,13 +80,13 @@
           <div class="relative h-2.5 w-full rounded-full bg-slate-800">
             <div class="h-2.5 rounded-full bg-[color:var(--breach)]"
                  style="width: {{ (100 * rec.kpi.enrolled / rec.kpi.target)|round(1) }}%"></div>
-            <div class="absolute top-[-3px] h-4 w-0.5 bg-[color:#7ea6ff]"
+            <div class="absolute top-[-3px] h-4 w-0.5 bg-[color:var(--institution-hi)]"
                  style="left: {{ (100 * rec.expected / rec.kpi.target)|round(1) }}%"
                  title="Plan to date: {{ rec.expected }}"></div>
           </div>
           <div class="mt-1 flex justify-between text-[11px] text-slate-500">
             <span>0</span>
-            <span class="text-[color:#7ea6ff]">plan to date {{ rec.expected }}</span>
+            <span class="text-[color:var(--institution-hi)]">plan to date {{ rec.expected }}</span>
             <span>target {{ rec.kpi.target }}</span>
           </div>
         </div>
@@ -245,7 +245,7 @@
     {# Built from boxes rather than ASCII: the labels carry live values whose length
        varies, and a monospace diagram silently jams its columns together the moment a
        coded term runs long. #}
-    <p class="text-center text-[13px] font-semibold tracking-wide text-[color:#7ea6ff]">{{ case.intervention }}</p>
+    <p class="text-center text-[13px] font-semibold tracking-wide text-[color:var(--institution-hi)]">{{ case.intervention }}</p>
     <div class="mx-auto mt-2 h-4 w-px bg-slate-700"></div>
 
     <div class="grid gap-3 md:grid-cols-3">
@@ -265,7 +265,7 @@
     <div class="mx-auto mt-3 h-4 w-px bg-slate-700"></div>
     <div class="mx-auto max-w-md space-y-2 text-center">
       <div class="rounded border border-[color:#33526f] bg-[#0e1c2b] px-4 py-2">
-        <p class="text-[12.5px] font-semibold text-[color:#7ea6ff]">VITALWATCH INVESTIGATION</p>
+        <p class="text-[12.5px] font-semibold text-[color:var(--institution-hi)]">VITALWATCH INVESTIGATION</p>
       </div>
       <p class="text-slate-600">▼</p>
       <div class="rounded border border-red-900 bg-red-950/30 px-4 py-2">
@@ -292,13 +292,13 @@
 
   <form method="get" class="mt-3 flex flex-wrap items-center gap-2">
     <input name="q" value="{{ retrieval.query }}"
-           class="min-w-[22rem] flex-1 rounded border border-slate-700 bg-[color:#0a1622] px-3 py-1.5 text-[12.5px] text-slate-200 focus:border-[color:#7ea6ff] focus:outline-none">
-    <button class="btn btn-primary" style="background:#2f5f8f;border-color:#2f5f8f">
+           class="min-w-[22rem] flex-1 rounded border border-slate-700 bg-[color:#0a1622] px-3 py-1.5 text-[12.5px] text-slate-200 focus:border-[color:var(--institution-hi)] focus:outline-none">
+    <button class="btn btn-primary">
       Retrieve
     </button>
     {% for preset in presets %}
       <a href="?q={{ preset|urlencode }}"
-         class="rounded border border-slate-700 px-2.5 py-1.5 text-[11.5px] text-slate-400 hover:border-[color:#7ea6ff] hover:text-[color:#7ea6ff]">{{ preset }}</a>
+         class="rounded border border-slate-700 px-2.5 py-1.5 text-[11.5px] text-slate-400 hover:border-[color:var(--institution-hi)] hover:text-[color:var(--institution-hi)]">{{ preset }}</a>
     {% endfor %}
   </form>
 
@@ -341,7 +341,7 @@
     </div>
 
     <div class="rounded border border-[color:#2b3f63] bg-[#0e1c2b] p-4">
-      <p class="text-[11.5px] font-semibold text-[color:#7ea6ff]">🔀 Reciprocal rank fusion</p>
+      <p class="text-[11.5px] font-semibold text-[color:var(--institution-hi)]">🔀 Reciprocal rank fusion</p>
       <p class="mt-0.5 text-[11px] text-slate-500">
         score = Σ 1/(k + rank), k={{ rrf_k }}. Ranks only — the two score scales never meet.
       </p>
@@ -442,7 +442,7 @@
         <label class="block">
           <span class="text-[11px] uppercase tracking-wide text-slate-500">Reason</span>
           <select name="reason" required
-                  class="mt-1 w-full rounded border border-slate-700 bg-[color:#0a1622] px-2.5 py-1.5 text-[12.5px] text-slate-200 focus:border-[color:#7ea6ff] focus:outline-none">
+                  class="mt-1 w-full rounded border border-slate-700 bg-[color:#0a1622] px-2.5 py-1.5 text-[12.5px] text-slate-200 focus:border-[color:var(--institution-hi)] focus:outline-none">
             {% for reason in case.escalation_reasons %}
               <option value="{{ reason }}">{{ reason }}</option>
             {% endfor %}
@@ -450,7 +450,7 @@
         </label>
 
         <input type="hidden" name="evidence_count" value="{{ evidence_count }}">
-        <button class="w-full rounded-[3px] px-4 py-2 text-[13px] font-semibold" style="background:#7ea6ff;color:#0a1622">
+        <button class="btn btn-primary w-full justify-center py-2 text-[13px]">
           Confirm decision
         </button>
         <p class="text-[11px] leading-relaxed text-slate-500">
@@ -469,7 +469,7 @@
   <div class="mt-4 grid gap-2 md:grid-cols-3 lg:grid-cols-6">
     {% for step, detail in summary_steps %}
       <div class="rounded border border-slate-800 bg-[#111c2f] p-3">
-        <div class="text-[10px] uppercase tracking-wide text-[color:#7ea6ff]">{{ loop.index }}</div>
+        <div class="text-[10px] uppercase tracking-wide text-[color:var(--institution-hi)]">{{ loop.index }}</div>
         <p class="mt-1 text-[12px] font-medium text-slate-200">{{ step }}</p>
         <p class="mt-1 text-[11px] leading-relaxed text-slate-500">{{ detail }}</p>
       </div>
@@ -504,7 +504,7 @@
     <p class="text-[12px] tracking-[0.2em] text-slate-500">
       DATA → INVESTIGATION → EVIDENCE → DECISION → AUDIT
     </p>
-    <p class="mt-2 text-[15px] font-semibold text-[color:#7ea6ff]">
+    <p class="mt-2 text-[15px] font-semibold text-[color:var(--institution-hi)]">
       Detect → Investigate → Explain → Act → Prove
     </p>
   </div>

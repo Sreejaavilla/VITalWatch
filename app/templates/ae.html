@@ -67,7 +67,7 @@
 {% endif %}
 
 <section class="mt-6 panel p-5">
-  <h2 class="text-sm font-medium text-slate-700">Report an adverse event</h2>
+  <h2 class="panel-title">Report an adverse event</h2>
   <form method="post" action="/ae" class="mt-4 grid gap-4 md:grid-cols-3">
 
     <label class="block text-sm">
@@ -154,7 +154,7 @@
         <th>24h clock</th>
       </tr>
     </thead>
-    <tbody class="divide-y divide-slate-100">
+    <tbody>
       {% for e in events %}
       {% set left = clocks.get(e.id) %}
       <tr class="{{ 'bg-[color:var(--breach-bg)]' if e.timeline_status == 'breached' else '' }}">
