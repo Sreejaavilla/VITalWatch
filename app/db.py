@@ -181,6 +181,21 @@ CREATE TABLE IF NOT EXISTS alerts (
     acknowledged_at TEXT
 );
 
+-- An investigator's decision on an investigation case. Ordinary, mutable data: the
+-- decision itself is the record, and its immutable copy lives in audit_events, written
+-- in the same transaction. Two tables because they answer different questions — this
+-- one "what is the current disposition", that one "what was decided, by whom, when".
+CREATE TABLE IF NOT EXISTS investigation_decisions (
+    id             TEXT PRIMARY KEY,
+    case_id        TEXT NOT NULL,
+    study_id       TEXT NOT NULL REFERENCES studies(id),
+    action         TEXT NOT NULL,
+    reason         TEXT NOT NULL,
+    actor          TEXT NOT NULL,
+    evidence_count INTEGER NOT NULL DEFAULT 0,
+    decided_at     TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS audit_events (
     id            TEXT PRIMARY KEY,
     seq           INTEGER NOT NULL UNIQUE,
@@ -204,6 +219,7 @@ CREATE INDEX IF NOT EXISTS ix_queries_study         ON queries(study_id);
 CREATE INDEX IF NOT EXISTS ix_deviations_study      ON deviations(study_id);
 CREATE INDEX IF NOT EXISTS ix_adverse_events_study  ON adverse_events(study_id);
 CREATE INDEX IF NOT EXISTS ix_audit_events_seq      ON audit_events(seq);
+CREATE INDEX IF NOT EXISTS ix_inv_decisions_case    ON investigation_decisions(case_id);
 """
 
 #: The immutability guarantee, at the storage layer rather than the application layer.
@@ -243,7 +259,8 @@ FOR EACH ROW EXECUTE FUNCTION audit_events_append_only();
 #: Tables the seed check counts against. study_sites is a join table, not portfolio data.
 SEEDED_TABLES = (
     "studies", "sites", "subjects", "visits", "deviations",
-    "queries", "adverse_events", "milestones", "alerts", "audit_events",
+    "queries", "adverse_events", "milestones", "alerts", "investigation_decisions",
+    "audit_events",
 )
 
 #: Every table, for the RLS pass below.
@@ -312,6 +329,16 @@ class Row(dict):
         if isinstance(key, int):
             return self._positional[key]
         return super().__getitem__(key)
+
+    def __iter__(self):
+        """Iterate values, as `sqlite3.Row` does — not keys, as a dict would.
+
+        Without this, `a, b = row` unpacks column *names* on Postgres and column
+        *values* on SQLite: the same statement quietly meaning two different things,
+        which is the worst kind of portability bug because nothing raises. `dict(row)`
+        is unaffected — it goes through `keys()`.
+        """
+        return iter(self._positional)
 
 
 def _row_factory(cursor):

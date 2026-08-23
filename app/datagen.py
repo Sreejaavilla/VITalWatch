@@ -21,7 +21,7 @@ from .db import Connection  # driver-neutral: SQLite or Postgres
 import uuid
 from datetime import date, datetime, time, timedelta, timezone
 
-from . import audit, pv
+from . import audit, case_data, pv
 from .config import settings
 
 TODAY = date(2026, 8, 22)
@@ -105,8 +105,22 @@ def seed(conn: Connection) -> None:
     _seed_deviations(conn, rng, studies, subjects)
     _seed_queries(conn, rng, studies, subjects)
     _seed_adverse_events(conn, rng, studies, subjects)
+    # The investigation case is generated last, from its own random stream, so that
+    # adding it cannot shift a single value in the eight studies above. Those studies
+    # keep their audit rows at seq 1-8 byte for byte; the case only appends seq 9.
+    studies.append(_seed_case(conn))
     _seed_audit(conn, studies)
     conn.commit()
+
+    # Reported after the case is in, or the count would describe a portfolio that no
+    # longer exists by the time the line is printed.
+    # Aliased: Postgres names every COUNT column "count", and two identically named
+    # columns collapse into one another in a mapping row.
+    counts = conn.execute(
+        "SELECT COUNT(*) AS total, COUNT(coded_term) AS coded FROM adverse_events"
+    ).fetchone()
+    total, coded = counts["total"], counts["coded"]
+    print(f"[datagen] coded {coded}/{total} adverse events against app/terms.csv")
 
 
 # ------------------------------------------------------------------------- sites
@@ -630,9 +644,7 @@ def _seed_adverse_events(
     # Code every narrative against the curated vocabulary. Done here rather than left to
     # the UI so the portfolio arrives already aggregable — an AE table full of "Uncoded"
     # is a screen that cannot answer a safety question.
-    coded = pv.code_uncoded_events(conn, commit=False)
-    total = conn.execute("SELECT COUNT(*) FROM adverse_events").fetchone()[0]
-    print(f"[datagen] coded {coded}/{total} adverse events against app/terms.csv")
+    pv.code_uncoded_events(conn, commit=False)
 
 
 # -------------------------------------------------------------------------- audit
@@ -662,3 +674,162 @@ def _seed_audit(conn: Connection, studies: list[dict]) -> None:
             timestamp=_dt(date.fromisoformat(study["start_date"])),
             commit=False,
         )
+
+
+# ------------------------------------------------------------------- investigation case
+
+
+def _seed_case(conn: Connection) -> dict:
+    """The AYU-008 case the investigation feature is built on. See `app/case_data.py`.
+
+    Shaped to be investigated rather than to look healthy: enrolment well behind plan,
+    and three hepatic events written three different ways, close together in exposure
+    time, inside the first monitoring interval. Every figure the case file states is
+    computed from these rows at request time — none of it is a caption.
+    """
+    rng = random.Random(settings.seed_random_seed + 1)
+    started = date.fromisoformat(case_data.START_DATE)
+
+    study = {
+        "id": case_data.STUDY_ID,
+        "title": case_data.TITLE,
+        "protocol_no": case_data.PROTOCOL_NO,
+        "ctri_number": case_data.CTRI_NUMBER,
+        "phase": case_data.PHASE,
+        "status": "enrolling",
+        "therapeutic_area": case_data.THERAPEUTIC_AREA,
+        "ec_approval_date": (started - timedelta(days=48)).isoformat(),
+        "ec_expiry_date": (started + timedelta(days=317)).isoformat(),
+        "ctri_registration_date": (started - timedelta(days=12)).isoformat(),
+        "target_enrolment": case_data.TARGET_ENROLMENT,
+        "actual_enrolment": case_data.ACTUAL_ENROLMENT,
+        "pi_name": case_data.PI_NAME,
+        "start_date": case_data.START_DATE,
+        "end_date": None,
+    }
+    conn.execute(
+        """INSERT INTO studies
+           (id, title, protocol_no, ctri_number, phase, status, therapeutic_area,
+            ec_approval_date, ec_expiry_date, ctri_registration_date,
+            target_enrolment, actual_enrolment, pi_name, start_date, end_date)
+           VALUES (:id,:title,:protocol_no,:ctri_number,:phase,:status,:therapeutic_area,
+                   :ec_approval_date,:ec_expiry_date,:ctri_registration_date,
+                   :target_enrolment,:actual_enrolment,:pi_name,:start_date,:end_date)""",
+        study,
+    )
+
+    # All twelve sites, which is what makes site-level recruitment variation a real
+    # thing to look at rather than an assertion.
+    site_ids = [r["id"] for r in conn.execute("SELECT id FROM sites ORDER BY id")]
+    for site_id in site_ids:
+        conn.execute(
+            "INSERT INTO study_sites (study_id, site_id) VALUES (?,?)",
+            (case_data.STUDY_ID, site_id),
+        )
+
+    for kind, offset in (
+        ("ec_approval", -48), ("ctri_registration", -12), ("first_site_activated", 6),
+        ("first_subject_in", 21), ("fifty_pct_enrolled", 250), ("last_subject_in", 400),
+    ):
+        planned = started + timedelta(days=offset)
+        done = planned <= TODAY and kind != "fifty_pct_enrolled"
+        conn.execute(
+            """INSERT INTO milestones (id, study_id, type, planned_date, actual_date, status)
+               VALUES (?,?,?,?,?,?)""",
+            (str(uuid.uuid4()), case_data.STUDY_ID, kind, planned.isoformat(),
+             planned.isoformat() if done else None, "done" if done else "planned"),
+        )
+
+    # Enrolment is deliberately concentrated: the first four sites take most of it, so
+    # "site-level variation" is visible in the data and not just listed as a factor.
+    weights = [0.26, 0.21, 0.16, 0.11] + [0.03] * (len(site_ids) - 4)
+    subjects: list[dict] = []
+    for n in range(1, case_data.ACTUAL_ENROLMENT + 1):
+        site_id = rng.choices(site_ids, weights=weights, k=1)[0]
+        screened = started + timedelta(days=rng.randint(14, 175))
+        subject = {
+            "id": str(uuid.uuid4()),
+            "subject_code": f"AYU-008-{n:03d}",
+            "study_id": case_data.STUDY_ID,
+            "site_id": site_id,
+            "screened_date": screened.isoformat(),
+            "enrolled_date": (screened + timedelta(days=rng.randint(3, 10))).isoformat(),
+            "status": "enrolled",
+            "arm": rng.choice(["Trial drug", "Control"]),
+            # Protocol population is 30-65, so no band outside it appears.
+            "age_band": rng.choice(["30-39", "40-49", "50-59", "60-69"]),
+            "sex": rng.choice(["F", "M"]),
+            "consent_version": "v2.1",
+            "consent_date": screened.isoformat(),
+        }
+        conn.execute(
+            """INSERT INTO subjects
+               (id, subject_code, study_id, site_id, screened_date, enrolled_date,
+                status, arm, age_band, sex, consent_version, consent_date)
+               VALUES (:id,:subject_code,:study_id,:site_id,:screened_date,:enrolled_date,
+                       :status,:arm,:age_band,:sex,:consent_version,:consent_date)""",
+            subject,
+        )
+        subjects.append(subject)
+
+    # Screen failures, so the screen-failure rate the recruitment evidence quotes is a
+    # real quotient and not a number typed into a template.
+    for n in range(1, 39):
+        screened = started + timedelta(days=rng.randint(14, 175))
+        conn.execute(
+            """INSERT INTO subjects
+               (id, subject_code, study_id, site_id, screened_date, enrolled_date,
+                status, arm, age_band, sex, consent_version, consent_date)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""",
+            (str(uuid.uuid4()), f"AYU-008-S{n:03d}", case_data.STUDY_ID,
+             rng.choice(site_ids), screened.isoformat(), None, "screen_failed", None,
+             rng.choice(["30-39", "40-49", "50-59", "60-69"]), rng.choice(["F", "M"]),
+             "v2.1", screened.isoformat()),
+        )
+
+    # Visits. The 8-week LFT points are named, because the protocol evidence and the
+    # event timing are read against them and a visit called "Week 8" would not carry
+    # that. Only visits that have come due are created.
+    by_code = {s["subject_code"]: s for s in subjects}
+    for subject in subjects:
+        enrolled = date.fromisoformat(subject["enrolled_date"])
+        for name, day in (
+            ("Screening", 0), ("Week 4", 28), ("Week 8 — LFT", 56),
+            ("Week 16 — LFT", 112), ("Week 24 — LFT (end of treatment)", 168),
+        ):
+            scheduled = enrolled + timedelta(days=day)
+            if scheduled > TODAY:
+                continue
+            completed = rng.random() < 0.93
+            conn.execute(
+                """INSERT INTO visits
+                   (id, study_id, site_id, subject_code, visit_name, scheduled_date,
+                    actual_date, window_days, status, monitoring_visit, report_filed)
+                   VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
+                (str(uuid.uuid4()), case_data.STUDY_ID, subject["site_id"],
+                 subject["subject_code"], name, scheduled.isoformat(),
+                 scheduled.isoformat() if completed else None, 7,
+                 "completed" if completed else "missed", 0, 0),
+            )
+
+    # The three events. Left uncoded on insert and coded below by the same routine that
+    # coded the rest of the portfolio — three narratives written three ways arriving at
+    # one controlled term is the thing the investigation is about, so it has to actually
+    # happen rather than be asserted.
+    for number, narrative, day, severity in case_data.AE_CASES:
+        subject = by_code[f"AYU-008-{number:03d}"]
+        onset = date.fromisoformat(subject["enrolled_date"]) + timedelta(days=day)
+        conn.execute(
+            """INSERT INTO adverse_events
+               (id, study_id, site_id, subject_code, narrative, onset_date, serious,
+                severity, causality, outcome, coding_source, drug_coding_source,
+                suspect_drug, reported_at, timeline_status)
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
+            (str(uuid.uuid4()), case_data.STUDY_ID, subject["site_id"],
+             subject["subject_code"], narrative, onset.isoformat(), 0, severity,
+             "possible", "recovering", "uncoded", "uncoded", case_data.INTERVENTION,
+             _dt(onset + timedelta(days=2), 11), "not_applicable"),
+        )
+
+    pv.code_uncoded_events(conn, commit=False)
+    return study

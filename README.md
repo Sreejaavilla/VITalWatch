@@ -41,7 +41,7 @@ python -m scripts.supabase verify    # walk the chain, print and compare the hea
 **With `DATABASE_URL` unset the same queries run against a local SQLite file** and the
 application needs no network at all. That is not a leftover — it is the fallback if the venue
 network dies, and it is testable: `scripts/rehearse.py` passes against both engines, and seeding
-either produces the same audit chain head, `72d9d98…`. The chain hashes record content rather
+either produces the same audit chain head, `e09de76…`. The chain hashes record content rather
 than storage, so the integrity guarantee does not depend on the vendor.
 
 `/health` reports which engine is live.
@@ -73,7 +73,7 @@ never disagree about a number.
 python -m app.pv "loose motion since yesterday"    # → Diarrhoea  VW-T0012  0.91  phrase
 python -m app.audit --verify                       # walks the chain; names the first broken row
 python -m app.alerts                               # evaluates every rule at current thresholds
-ENROLMENT_LAG_PCT=95 python -m app.alerts          # 8 alerts → 10. Thresholds are configuration
+ENROLMENT_LAG_PCT=95 python -m app.alerts          # 9 alerts → 11. Thresholds are configuration
 python -m app.signals                              # ranked study/term disproportionality
 python -m app.sdtm STU-002 > dm.csv                # CDISC SDTM Demographics domain
 python -m app.fhir STU-003                         # study as a FHIR R4 ResearchStudy
@@ -106,6 +106,32 @@ sqlite3 data/ctms.db "UPDATE audit_events SET after_json='{}' WHERE seq=3;"
 
 The same refusal on both engines — a trigger function in Postgres, a trigger in SQLite.
 `scripts/rehearse.py` asserts it rather than assuming it.
+
+## Clinical investigation
+
+`/investigation` assembles one trial's protocol, recruitment position, individual adverse
+events, curated Ayurvedic references and comparable historical trials into a single case,
+with an evidence graph and a retrieval panel showing how the supporting documents were
+found.
+
+The retrieval is **Okapi BM25** (implemented in `app/retrieval.py`, not imported) and
+**curated-vocabulary concept expansion**, fused by **Reciprocal Rank Fusion** (`k=60`).
+All three rankings are displayed, because the point of a fusion step is being able to see
+what it changed. Search `deranged LFT` to watch BM25 return nothing and concept expansion
+return eight — those words appear in no document in the corpus.
+
+The second retriever is **not a dense vector model and is not described as one**. Real
+dense retrieval embeds the query at request time and this build ships no neural model;
+see [`docs/qa-prep.md`](./docs/qa-prep.md) Q10b.
+
+The system reports a pattern and stops. It makes no causality claim and no judgement about
+monitoring adequacy — `/api/investigation/INV-001` returns an explicit `not_claimed` list.
+The investigator's decision is recorded with a named actor and a reason, in the same
+transaction as its audit row.
+
+**AYU-008 is invented**, as are its constituents, the historical trials and the
+literature. Every corpus document carries its provenance. No real herb is named beside a
+fabricated liver finding.
 
 ## Not built, deliberately
 

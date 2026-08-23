@@ -20,6 +20,8 @@ you can destroy and rebuild on stage is a demo you can give honestly.
         │   db.py      sqlite | postgres │
         │   kpi.py     computed metrics │
         │   roles.py   per-role lenses  │
+        │   investigation.py  case view │
+        │   retrieval.py BM25+concept+RRF│
         │   alerts.py  threshold rules  │
         │   pv.py      coding + clocks  │
         │   audit.py   hash chain       │

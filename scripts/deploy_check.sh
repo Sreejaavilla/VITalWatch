@@ -13,7 +13,9 @@ echo "checking ${BASE}"
 fail=0
 for path in /health /portfolio /study/STU-004 /ae /signals /audit \
             /role/investigator /role/safety /role/leadership \
+            /investigation /investigation/INV-001 \
             /api/kpi/portfolio /api/kpi/role/leadership /api/alerts /api/signals \
+            /api/investigation/INV-001 \
             /api/audit/verify /api/fhir/ResearchStudy/STU-001 \
             /api/export/sdtm/dm.csv /docs; do
     code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 60 "${BASE}${path}")

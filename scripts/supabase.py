@@ -29,7 +29,10 @@ from app.config import settings  # noqa: E402
 
 #: What seeding an empty database produces, on either engine. Printed alongside the
 #: live value so a mismatch is visible rather than merely recorded.
-EXPECTED_SEED_HEAD = "72d9d98594b990762e1115a05d5d69b6bfbe8a1bc41ef52eb923374cf3f70576"
+EXPECTED_SEED_HEAD = "e09de76e19002c51244723ff846d1ff2d5216d8871132daf36406e1d16ab5f40"
+#: Audit rows laid down by the seed: one per study, and there are nine since the
+#: investigation case was added.
+SEED_EVENT_COUNT = 9
 
 GREEN, RED, DIM, OFF = "\033[32m", "\033[31m", "\033[2m", "\033[0m"
 
@@ -113,7 +116,7 @@ def verify() -> int:
 
     head = result["head"]
     print(f"{GREEN}chain intact{OFF} — {result['count']} events, head {head[:16]}…")
-    if result["count"] == 8:
+    if result["count"] == SEED_EVENT_COUNT:
         same = head == EXPECTED_SEED_HEAD
         print(f"  {'matches' if same else RED + 'DIFFERS FROM' + OFF} the SQLite seed hash")
         return 0 if same else 1

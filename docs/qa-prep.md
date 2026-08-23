@@ -141,6 +141,48 @@ Deleting the database and restarting rebuilds the entire portfolio in about two 
 seed is fixed, so every number comes back identical — the demo, the deck and the video can't
 disagree with each other. And there's a recorded run on this laptop that plays offline.
 
+### 10b. "Is that real RAG? Are those real embeddings?"
+
+**Half of it is exactly what it says, and I will tell you which half before you ask.**
+
+BM25 is real — implemented in `app/retrieval.py`, not imported, so you can read the `k1`
+and `b` parameters and the IDF term. Reciprocal Rank Fusion is real, `k=60`, the
+published algorithm, and it fuses *ranks* rather than scores, which is precisely why the
+two retrievers never have to share a scale.
+
+The second retriever is **not a dense vector model, and I do not call it one.** Real
+dense retrieval embeds the query at request time, which means shipping a neural model;
+this build has none. What it does instead is expand the query through the same curated
+vocabulary the adverse-event coder uses, and match on controlled terms. That is a
+genuinely independent signal, not a rename of BM25 — search `deranged LFT` on the
+investigation board and BM25 returns **nothing**, because those three words appear in no
+document in the corpus, while concept expansion returns eight. It is also the same
+vocabulary as the coder, so the retriever and the coder cannot disagree about what a
+term means.
+
+Swapping in embeddings replaces one function. `rrf()` takes ranked lists and does not
+care where they came from.
+
+*(This is the same position as MedDRA, and for the same reason: a system that overclaims
+one retrieval method has told you what its other claims are worth.)*
+
+### 10c. "Does the investigation decide whether the drug caused the injury?"
+
+**No, and it is built so that it cannot.** It reports that three events resolved to one
+controlled term inside a nine-day exposure window, that the disproportionality screen
+returns PRR 14.67, and that the events fell inside the first monitoring interval. It
+then stops, and the screen says "investigator review required".
+
+Two specific things it refuses to say: that AYU-008 caused hepatic injury, and that the
+8-week monitoring interval is inadequate. Both are clinical determinations. A system
+that makes them is overstepping in the one domain where overstepping is least
+forgivable, and `/api/investigation/INV-001` returns a `not_claimed` list saying so in
+the payload rather than only in the interface.
+
+What it does instead is make the human's determination cheap to reach and impossible to
+lose: the decision is written to the audit chain in the same transaction as the decision
+record, with the evidence count attached.
+
 ### 11. "What's the database, and is it actually shared?"
 
 **Postgres, hosted on Supabase.** It started on SQLite, and the move was one module — every
@@ -152,7 +194,7 @@ insurance: if the venue network is down, unset one variable and the whole system
 local file with the same data.
 
 The detail I would offer if they are technical: **seeding either engine produces the same audit
-chain head hash**, `72d9d98…`. The chain hashes record content, not storage, so the integrity
+chain head hash**, `e09de76…`. The chain hashes record content, not storage, so the integrity
 guarantee is a property of the data rather than of the vendor. `python -m scripts.supabase verify`
 prints it and compares.
 

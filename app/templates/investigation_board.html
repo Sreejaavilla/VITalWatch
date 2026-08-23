@@ -1,0 +1,514 @@
+{% extends "base.html" %}
+{% from "_macros.html" import badge %}
+{% block title %}Investigating {{ case.intervention }} — {{ settings.app_name }}{% endblock %}
+
+{% block content %}
+<div class="inv">
+
+  <div class="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
+    <div>
+      <p class="inv-eyebrow">Investigation board · case {{ case.case_id }}</p>
+      <h1 class="mt-1.5 text-[24px] font-semibold leading-tight tracking-tight">
+        {{ case.intervention }} — {{ r.finding }}
+      </h1>
+    </div>
+    <div class="flex items-center gap-2">
+      <a href="/investigation" class="btn btn-quiet text-slate-400">← Case file</a>
+      <a href="/api/investigation/{{ case.case_id }}" class="btn btn-quiet text-slate-400">JSON</a>
+    </div>
+  </div>
+
+  <p class="mt-2 max-w-3xl text-[13px] leading-relaxed text-slate-400">
+    Five sources, one view. Open each in turn — nothing below is written into the page;
+    every figure is computed from the database when this page is rendered.
+  </p>
+
+  {# ---------------------------------------------------------------- evidence cards #}
+  <div class="mt-6 grid gap-2.5">
+
+    {# --- 01 protocol --- #}
+    <details class="ev" {{ "open" if expand }}>
+      <summary>
+        <span class="ev-num">EVIDENCE 01</span>
+        <span class="ev-title">📄 Trial protocol</span>
+        <span class="ev-open"></span>
+      </summary>
+      <div class="ev-body">
+        <div class="doc">
+          <dl class="grid gap-x-8 gap-y-1.5 sm:grid-cols-2">
+            {% for k, v in case.protocol.items() %}
+              <div class="flex gap-2">
+                <dt class="shrink-0 font-medium text-slate-500">{{ k }}:</dt>
+                <dd>{{ v }}</dd>
+              </div>
+            {% endfor %}
+          </dl>
+          <p class="doc-src mt-2.5">AYU-008 protocol v2.1 · synthetic</p>
+        </div>
+        <div class="mt-3 rounded border border-amber-900/60 bg-amber-950/30 p-3">
+          <p class="text-[12px] font-medium text-amber-300">Protocol observation</p>
+          <p class="mt-1 text-[12.5px] leading-relaxed text-slate-300">
+            {{ case.protocol_observation }}
+          </p>
+        </div>
+      </div>
+    </details>
+
+    {# --- 02 recruitment --- #}
+    <details class="ev" {{ "open" if expand }}>
+      <summary>
+        <span class="ev-num">EVIDENCE 02</span>
+        <span class="ev-title">👥 Recruitment data</span>
+        <span class="ev-open"></span>
+      </summary>
+      <div class="ev-body">
+        <div class="grid gap-4 sm:grid-cols-3">
+          {% for label, value in [
+            ('Expected by today', rec.expected),
+            ('Actual enrolment', rec.kpi.enrolled),
+            ('Deviation', '%+.1f%%'|format(rec.deviation_pct))
+          ] %}
+            <div class="rounded border border-slate-800 bg-[#0b1220] p-3">
+              <div class="text-[10.5px] uppercase tracking-wide text-slate-500">{{ label }}</div>
+              <div class="mt-0.5 text-[22px] font-semibold tabular-nums text-slate-100">{{ value }}</div>
+            </div>
+          {% endfor %}
+        </div>
+
+        {# The plan/actual bar, on the same straight line the alert rule measures. #}
+        <div class="mt-4">
+          <div class="relative h-2.5 w-full rounded-full bg-slate-800">
+            <div class="h-2.5 rounded-full bg-red-500"
+                 style="width: {{ (100 * rec.kpi.enrolled / rec.kpi.target)|round(1) }}%"></div>
+            <div class="absolute top-[-3px] h-4 w-0.5 bg-cyan-300"
+                 style="left: {{ (100 * rec.expected / rec.kpi.target)|round(1) }}%"
+                 title="Plan to date: {{ rec.expected }}"></div>
+          </div>
+          <div class="mt-1 flex justify-between text-[11px] text-slate-500">
+            <span>0</span>
+            <span class="text-cyan-300">plan to date {{ rec.expected }}</span>
+            <span>target {{ rec.kpi.target }}</span>
+          </div>
+        </div>
+
+        <p class="mt-4 text-[12px] font-medium text-slate-300">
+          Recruitment risk: <span class="text-red-400">{{ rec.risk }}</span>
+          <span class="ml-2 font-normal text-slate-500">
+            possible contributing factors — each is a hypothesis to check, not a finding
+          </span>
+        </p>
+        <ul class="mt-2 grid gap-1.5 sm:grid-cols-2">
+          {% for name, detail in rec.factors %}
+            <li class="rounded border border-slate-800 px-3 py-2 text-[12px] text-slate-400">
+              <span class="font-medium text-slate-300">{{ name }}.</span> {{ detail }}
+            </li>
+          {% endfor %}
+        </ul>
+
+        <p class="mt-3 text-[11.5px] text-slate-500">
+          Site variation is measurable rather than asserted:
+          <span class="text-slate-300">{{ rec.top4_share }}%</span> of enrolment sits in
+          4 of {{ rec.by_site|length }} linked sites.
+        </p>
+      </div>
+    </details>
+
+    {# --- 03 adverse events, and the moment they connect --- #}
+    <details class="ev inv-cluster" {{ "open" if expand }}>
+      <summary>
+        <span class="ev-num">EVIDENCE 03</span>
+        <span class="ev-title">⚠️ Adverse events</span>
+        <span class="ev-open"></span>
+      </summary>
+      <div class="ev-body">
+        <p class="text-slate-400">
+          Three events, reported separately by three sites, months apart. Each was written
+          in that site's own words.
+        </p>
+
+        <div class="mt-3 grid gap-2.5 md:grid-cols-3">
+          {% for e in r.cluster.events %}
+            <div class="pt {{ 'pt-linked' if r.cluster }}">
+              <div class="flex items-baseline justify-between">
+                <span class="text-[12.5px] font-semibold">{{ e.subject_code }}</span>
+                <span class="text-[11px] tabular-nums text-slate-500">{{ e.onset_date | d }}</span>
+              </div>
+              <p class="mt-1 text-[12px] italic text-slate-600">“{{ e.narrative }}”</p>
+              <dl class="mt-2 space-y-0.5 text-[11.5px] text-slate-600">
+                <div class="flex gap-1.5">
+                  <dt class="text-slate-400">Coded:</dt>
+                  <dd class="font-medium text-slate-800">{{ e.coded_term }}</dd>
+                </div>
+                <div class="flex gap-1.5">
+                  <dt class="text-slate-400">Severity:</dt><dd>{{ e.severity|capitalize }}</dd>
+                </div>
+                <div class="flex gap-1.5">
+                  <dt class="text-slate-400">Day on treatment:</dt>
+                  <dd class="font-semibold text-red-700">{{ e.day_on_treatment }}</dd>
+                </div>
+              </dl>
+            </div>
+          {% endfor %}
+        </div>
+
+        {# The aha. Not that three events happened — that they align once you stop
+           reading them by date and start reading them by exposure. #}
+        <div class="mt-4 rounded border border-red-900/70 bg-red-950/30 p-4">
+          <p class="text-[12.5px] font-semibold text-red-300">⚠ Potential safety pattern</p>
+          <p class="mt-1.5 text-[13px] leading-relaxed text-slate-300">
+            {{ r.cluster.size }} events resolved to the same controlled term
+            — <span class="font-medium text-slate-100">{{ r.cluster.coded_term }}</span>
+            ({{ r.cluster.coded_code }}) — from three differently worded narratives, between
+            day {{ r.cluster.first_day }} and day {{ r.cluster.last_day }} of exposure.
+          </p>
+          <p class="mt-2 text-[12.5px] leading-relaxed text-cyan-200">
+            <span class="font-semibold">{{ r.cluster.span_days }} days apart on treatment.
+            {{ r.cluster.calendar_span_days }} days apart by calendar date.</span>
+            Read chronologically these are three unrelated events four months apart. Aligned
+            by exposure day they fall inside a nine-day window.
+          </p>
+          <p class="mt-2 text-[11.5px] text-slate-400">
+            Potential association detected — investigator review required. This is a pattern
+            in the data. It is not a finding of causation, and the system does not make one.
+          </p>
+        </div>
+      </div>
+    </details>
+
+    {# --- 04 ayurvedic evidence --- #}
+    <details class="ev" {{ "open" if expand }}>
+      <summary>
+        <span class="ev-num">EVIDENCE 04</span>
+        <span class="ev-title">🌿 Ayurvedic evidence</span>
+        <span class="ev-open"></span>
+      </summary>
+      <div class="ev-body">
+        <p class="text-slate-400">
+          Retrieved from the curated corpus for the coded term. Intervention → formulation
+          → constituent → relevant safety context.
+        </p>
+        <div class="mt-3 grid gap-2.5">
+          {% for d in ayurveda %}
+            <div class="doc">
+              <p class="font-medium text-slate-800">{{ d.title }}</p>
+              <p class="mt-1">{{ d.text }}</p>
+              <p class="doc-src mt-2">{{ d.source }} · <span class="text-amber-700">{{ d.provenance }}</span></p>
+            </div>
+          {% endfor %}
+        </div>
+        <p class="mt-3 text-[11.5px] leading-relaxed text-slate-500">
+          Constituents are designations, not plants. Naming a real herb beside a fabricated
+          liver signal is not something a demonstration should do, however clearly labelled
+          the page is — so the corpus does not.
+        </p>
+      </div>
+    </details>
+
+    {# --- 05 historical trials --- #}
+    <details class="ev" {{ "open" if expand }}>
+      <summary>
+        <span class="ev-num">EVIDENCE 05</span>
+        <span class="ev-title">📚 Historical clinical trials</span>
+        <span class="ev-open"></span>
+      </summary>
+      <div class="ev-body">
+        <p class="text-slate-400">
+          Has anything like this been seen before? {{ historical|length }} related records
+          retrieved.
+        </p>
+        <div class="mt-3 grid gap-2.5">
+          {% for d in historical %}
+            <div class="doc">
+              <p class="font-medium text-slate-800">{{ d.title }}</p>
+              <p class="mt-1">{{ d.text }}</p>
+              <p class="doc-src mt-2">{{ d.source }} · <span class="text-amber-700">{{ d.provenance }}</span></p>
+            </div>
+          {% endfor %}
+        </div>
+        <p class="mt-3 text-[11.5px] leading-relaxed text-slate-500">
+          The second record is the useful one: a comparable population with no hepatic
+          finding, and no shared constituent. A system that only retrieved corroboration
+          would be a system that only ever agreed with itself.
+        </p>
+      </div>
+    </details>
+  </div>
+
+  {# --------------------------------------------------------------- evidence graph #}
+  <hr class="inv-rule">
+  <h2 class="text-[15px] font-semibold">Evidence graph</h2>
+  <p class="mt-1 max-w-3xl text-[12.5px] leading-relaxed text-slate-400">
+    The intelligence is not in any one document. It is in the relationship between them.
+  </p>
+
+  <div class="mt-4 rounded border border-slate-800 bg-[#0b1220] p-5">
+    {# Built from boxes rather than ASCII: the labels carry live values whose length
+       varies, and a monospace diagram silently jams its columns together the moment a
+       coded term runs long. #}
+    <p class="text-center text-[13px] font-semibold tracking-wide text-cyan-300">{{ case.intervention }}</p>
+    <div class="mx-auto mt-2 h-4 w-px bg-slate-700"></div>
+
+    <div class="grid gap-3 md:grid-cols-3">
+      {% for label, head, tail in [
+        ('PROTOCOL', case.protocol['Monitoring'], 'events fell inside the first interval'),
+        ('PATIENT EVENTS', r.cluster.size ~ ' × ' ~ r.cluster.coded_term, 'day ' ~ r.cluster.first_day ~ '–' ~ r.cluster.last_day ~ ' of exposure'),
+        ('RESEARCH', retrieval.fused|length ~ ' documents', 'retrieved from ' ~ retrieval.corpus_size)
+      ] %}
+        <div class="rounded border border-slate-700 bg-[#111c2f] p-3 text-center">
+          <p class="text-[10px] uppercase tracking-[0.12em] text-slate-500">{{ label }}</p>
+          <p class="mt-1 text-[12.5px] font-medium text-slate-200">{{ head }}</p>
+          <p class="mt-0.5 text-[11px] text-slate-500">{{ tail }}</p>
+        </div>
+      {% endfor %}
+    </div>
+
+    <div class="mx-auto mt-3 h-4 w-px bg-slate-700"></div>
+    <div class="mx-auto max-w-md space-y-2 text-center">
+      <div class="rounded border border-cyan-800 bg-[#0e1c2b] px-4 py-2">
+        <p class="text-[12.5px] font-semibold text-cyan-300">VITALWATCH INVESTIGATION</p>
+      </div>
+      <p class="text-slate-600">▼</p>
+      <div class="rounded border border-red-900 bg-red-950/30 px-4 py-2">
+        <p class="text-[12.5px] font-semibold text-red-300">POTENTIAL SAFETY PATTERN</p>
+        <p class="mt-0.5 text-[11px] text-slate-400">
+          PRR {{ '%.2f'|format(r.signal.prr) if r.signal and r.signal.prr else '—' }}
+          · {{ r.cluster.span_days }}-day exposure window
+        </p>
+      </div>
+      <p class="text-slate-600">▼</p>
+      <div class="rounded border border-amber-900 bg-amber-950/30 px-4 py-2">
+        <p class="text-[12.5px] font-semibold text-amber-300">INVESTIGATOR REVIEW</p>
+        <p class="mt-0.5 text-[11px] text-slate-400">the system stops here</p>
+      </div>
+    </div>
+  </div>
+
+  {# ------------------------------------------------------------ retrieval / RRF #}
+  <hr class="inv-rule">
+  <h2 class="text-[15px] font-semibold">How the evidence was found</h2>
+  <p class="mt-1 max-w-3xl text-[12.5px] leading-relaxed text-slate-400">
+    Two retrievers that fail differently, fused by reciprocal rank fusion.
+  </p>
+
+  <form method="get" class="mt-3 flex flex-wrap items-center gap-2">
+    <input name="q" value="{{ retrieval.query }}"
+           class="min-w-[22rem] flex-1 rounded border border-slate-700 bg-[#0b1220] px-3 py-1.5 text-[12.5px] text-slate-200 focus:border-cyan-500 focus:outline-none">
+    <button class="rounded bg-cyan-600 px-3 py-1.5 text-[12.5px] font-medium text-white hover:bg-cyan-500">
+      Retrieve
+    </button>
+    {% for preset in presets %}
+      <a href="?q={{ preset|urlencode }}"
+         class="rounded border border-slate-700 px-2.5 py-1.5 text-[11.5px] text-slate-400 hover:border-cyan-600 hover:text-cyan-300">{{ preset }}</a>
+    {% endfor %}
+  </form>
+
+  <div class="mt-4 grid gap-4 lg:grid-cols-3">
+    <div class="rounded border border-slate-800 bg-[#111c2f] p-4">
+      <p class="text-[11.5px] font-semibold text-blue-300">Search 1 — BM25 (lexical)</p>
+      <p class="mt-0.5 text-[11px] text-slate-500">Exact term overlap, length-normalised. k1={{ k1 }}, b={{ b }}.</p>
+      <div class="mt-2.5 rank">
+        {% for h in retrieval.bm25 %}
+          <div class="rank-row">
+            <span class="rank-n">{{ h.rank }}</span>
+            <span class="min-w-0 flex-1 truncate text-[11.5px] text-slate-300">{{ h.document.title }}</span>
+            <span class="text-[11px] tabular-nums text-slate-500">{{ h.score }}</span>
+          </div>
+        {% else %}
+          <p class="py-2 text-[12px] text-amber-400">
+            No results — none of these words appear in any document.
+          </p>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="rounded border border-slate-800 bg-[#111c2f] p-4">
+      <p class="text-[11.5px] font-semibold text-violet-300">Search 2 — concept expansion</p>
+      <p class="mt-0.5 text-[11px] text-slate-500">
+        Query expanded through the curated vocabulary, then matched on controlled terms.
+        {% if retrieval.concepts %}Resolved {{ retrieval.concepts|length }} concept(s).{% endif %}
+      </p>
+      <div class="mt-2.5 rank">
+        {% for h in retrieval.concept %}
+          <div class="rank-row">
+            <span class="rank-n">{{ h.rank }}</span>
+            <span class="min-w-0 flex-1 truncate text-[11.5px] text-slate-300">{{ h.document.title }}</span>
+            <span class="text-[11px] tabular-nums text-slate-500">{{ h.score }}</span>
+          </div>
+        {% else %}
+          <p class="py-2 text-[12px] text-slate-500">No controlled term matched this query.</p>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="rounded border border-cyan-900 bg-[#0e1c2b] p-4">
+      <p class="text-[11.5px] font-semibold text-cyan-300">🔀 Reciprocal rank fusion</p>
+      <p class="mt-0.5 text-[11px] text-slate-500">
+        score = Σ 1/(k + rank), k={{ rrf_k }}. Ranks only — the two score scales never meet.
+      </p>
+      <div class="mt-2.5 rank">
+        {% for h in retrieval.fused %}
+          <div class="rank-row">
+            <span class="rank-n">{{ h.rank }}</span>
+            <span class="min-w-0 flex-1">
+              <span class="block truncate text-[11.5px] text-slate-200">{{ h.document.title }}</span>
+              <span class="text-[10.5px] text-slate-500">
+                {{ h.document.source }} ·
+                bm25 {{ h.bm25_rank or '—' }} / concept {{ h.concept_rank or '—' }}
+              </span>
+            </span>
+            <span class="chip {{ 'chip-both' if h.found_by == 'both' else ('chip-concept' if h.found_by == 'concept only' else 'chip-lex') }}">
+              {{ h.found_by }}
+            </span>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <details class="note mt-3" style="--x:0">
+    <summary class="text-slate-400">What the second retriever is, and is not</summary>
+    <div class="note-body text-slate-400">
+      <p>It is <span class="text-slate-200">not a dense vector model</span>. Real dense
+      retrieval embeds the query at request time, which means shipping a neural model;
+      this build has none, and calling a lexical retriever “semantic” would be the same
+      overclaim as calling <code class="font-mono">terms.csv</code> MedDRA.</p>
+      <p>What it does is real and independent: it expands the query through the curated
+      vocabulary, so a query reaches documents sharing no words with it. Try
+      <span class="font-mono text-slate-200">deranged LFT</span> — BM25 returns nothing,
+      because those words appear in no document; concept expansion returns eight, because
+      the phrase resolves to the same controlled term the corpus discusses as
+      “transaminase”. It is also the vocabulary the adverse-event coder uses, so the
+      retriever and the coder cannot disagree about what a term means.</p>
+      <p>Swapping in embeddings replaces one function.
+      <code class="font-mono">rrf()</code> consumes ranked lists and does not care where
+      they came from.</p>
+    </div>
+  </details>
+
+  {# --------------------------------------------------------------------- report #}
+  <hr class="inv-rule">
+  <div class="grid gap-5 lg:grid-cols-[1.4fr_1fr]">
+    <div class="rounded border border-slate-800 bg-[#111c2f] p-5">
+      <p class="inv-eyebrow">Investigation finding</p>
+      <h2 class="mt-2 text-[17px] font-semibold">{{ r.finding }}</h2>
+
+      <p class="mt-4 text-[11px] uppercase tracking-wide text-slate-500">Supporting observations</p>
+      <ol class="mt-2 space-y-2">
+        {% for o in r.observations %}
+          <li class="flex gap-2.5 text-[12.5px] leading-relaxed text-slate-300">
+            <span class="shrink-0 tabular-nums text-slate-600">{{ loop.index }}</span>
+            <span>{{ o }}</span>
+          </li>
+        {% endfor %}
+      </ol>
+
+      <div class="mt-4 grid gap-3 border-t border-slate-800 pt-3 sm:grid-cols-2">
+        <div>
+          <p class="text-[11px] uppercase tracking-wide text-slate-500">Confidence</p>
+          <p class="mt-0.5 text-[13px] font-medium text-amber-300">🟠 {{ r.confidence }}</p>
+        </div>
+        <div>
+          <p class="text-[11px] uppercase tracking-wide text-slate-500">Recommended next step</p>
+          <p class="mt-0.5 text-[12.5px] leading-relaxed text-slate-300">{{ r.next_step }}</p>
+        </div>
+      </div>
+      <p class="mt-3 text-[11.5px] leading-relaxed text-slate-500">
+        A recommendation, not a clinical judgement. Causality assessment is the
+        investigator's, and this system records it rather than making it.
+      </p>
+    </div>
+
+    {# ------------------------------------------------------------ the decision #}
+    <div class="rounded border border-slate-800 bg-[#111c2f] p-5">
+      <p class="inv-eyebrow">Investigator decision</p>
+      <p class="mt-2 text-[13px] text-slate-300">What should the investigator do?</p>
+
+      <form method="post" action="/investigation/{{ case.case_id }}/decision" class="mt-3 space-y-3">
+        <div class="grid gap-2">
+          {% for key, (label, detail) in case.decisions.items() %}
+            <label class="flex cursor-pointer items-start gap-2.5 rounded border border-slate-700 p-2.5 hover:border-cyan-700">
+              <input type="radio" name="action" value="{{ key }}" required
+                     {{ 'checked' if key == 'escalate' }} class="mt-0.5">
+              <span>
+                <span class="block text-[12.5px] font-medium text-slate-200">
+                  {{ '🟢' if key == 'acknowledge' else ('🟠' if key == 'review' else '🔴') }} {{ label }}
+                </span>
+                <span class="block text-[11px] text-slate-500">{{ detail }}</span>
+              </span>
+            </label>
+          {% endfor %}
+        </div>
+
+        <label class="block">
+          <span class="text-[11px] uppercase tracking-wide text-slate-500">Reason</span>
+          <select name="reason" required
+                  class="mt-1 w-full rounded border border-slate-700 bg-[#0b1220] px-2.5 py-1.5 text-[12.5px] text-slate-200 focus:border-cyan-500 focus:outline-none">
+            {% for reason in case.escalation_reasons %}
+              <option value="{{ reason }}">{{ reason }}</option>
+            {% endfor %}
+          </select>
+        </label>
+
+        <input type="hidden" name="evidence_count" value="{{ evidence_count }}">
+        <button class="w-full rounded bg-cyan-500 px-4 py-2 text-[13px] font-semibold text-slate-900 hover:bg-cyan-400">
+          Confirm decision
+        </button>
+        <p class="text-[11px] leading-relaxed text-slate-500">
+          Writes the decision and its audit row in one transaction, with
+          {{ evidence_count }} linked evidence sources. If the audit write fails the
+          decision is rolled back with it.
+        </p>
+      </form>
+    </div>
+  </div>
+
+  {# ------------------------------------------------- what happened, after deciding #}
+  {% if decisions %}
+  <hr class="inv-rule">
+  <h2 class="text-[15px] font-semibold">Case {{ case.intervention }} — what did the investigation establish?</h2>
+  <div class="mt-4 grid gap-2 md:grid-cols-3 lg:grid-cols-6">
+    {% for step, detail in summary_steps %}
+      <div class="rounded border border-slate-800 bg-[#111c2f] p-3">
+        <div class="text-[10px] uppercase tracking-wide text-cyan-400">{{ loop.index }}</div>
+        <p class="mt-1 text-[12px] font-medium text-slate-200">{{ step }}</p>
+        <p class="mt-1 text-[11px] leading-relaxed text-slate-500">{{ detail }}</p>
+      </div>
+    {% endfor %}
+  </div>
+
+  <div class="mt-4 rounded border border-emerald-900 bg-emerald-950/30 p-4">
+    <p class="text-[12.5px] font-semibold text-emerald-300">✅ Decision recorded</p>
+    <table class="tbl mt-2" style="background:transparent">
+      <thead><tr><th>Recorded</th><th>Actor</th><th>Action</th><th>Reason</th><th>Evidence</th></tr></thead>
+      <tbody>
+        {% for d in decisions %}
+        <tr>
+          <td class="text-xs tabular-nums text-slate-400">{{ d.decided_at | dt }}</td>
+          <td class="text-slate-300">{{ d.actor }}</td>
+          <td>{{ badge(case.decisions[d.action][0], 'bad' if d.action == 'escalate' else ('warn' if d.action == 'review' else 'good')) }}</td>
+          <td class="text-slate-400">{{ d.reason }}</td>
+          <td class="num text-slate-400">{{ d.evidence_count }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <p class="mt-2 text-[12px] text-slate-300">
+      The investigation produced the decision. The audit trail preserves it.
+      <a href="/audit?verify=1" class="ml-1 font-medium text-emerald-300 underline">
+        See it in the chain and verify →
+      </a>
+    </p>
+  </div>
+
+  <div class="mt-5 rounded border border-slate-800 bg-[#0b1220] p-5 text-center">
+    <p class="text-[12px] tracking-[0.2em] text-slate-500">
+      DATA → INVESTIGATION → EVIDENCE → DECISION → AUDIT
+    </p>
+    <p class="mt-2 text-[15px] font-semibold text-cyan-300">
+      Detect → Investigate → Explain → Act → Prove
+    </p>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

@@ -74,13 +74,13 @@ def run_once(run_no: int) -> list[str]:
     with TestClient(app) as c:
         # ---- beat 1: portfolio
         k = c.get("/api/kpi/portfolio").json()
-        check("portfolio: 7 active studies", k["active_studies"], 7)
-        check("portfolio: 222 enrolled of 530", (k["enrolled_total"], k["target_total"]), (222, 530))
+        check("portfolio: 8 active studies", k["active_studies"], 8)
+        check("portfolio: 359 enrolled of 1030", (k["enrolled_total"], k["target_total"]), (359, 1030))
         check("portfolio: 10 of 12 sites activated", (k["sites_activated"], k["sites_total"]), (10, 12))
         check("portfolio: 42 open queries", k["open_queries"], 42)
 
         alerts = c.get("/api/alerts").json()
-        check("portfolio: 8 alerts", len(alerts), 8)
+        check("portfolio: 9 alerts", len(alerts), 9)
         by_study = {a["study_id"]: a["message"] for a in alerts if a["rule"] == "enrolment_lag"}
         check("STU-001 enrolment at 34% of plan", "34%" in by_study.get("STU-001", ""))
         check("STU-005 enrolment at 41% of plan", "41%" in by_study.get("STU-005", ""))
@@ -95,7 +95,7 @@ def run_once(run_no: int) -> list[str]:
 
         # ---- beat 3: file a serious AE
         before = c.get("/api/audit/verify").json()
-        check("chain intact before filing", before["ok"] and before["count"] == 8)
+        check("chain intact before filing", before["ok"] and before["count"] == 9)
 
         filed = c.post("/ae", data={
             "study_id": "STU-002", "subject_code": "AIIA-002-004",
@@ -136,11 +136,11 @@ def run_once(run_no: int) -> list[str]:
         arth = next((s for s in sig if s["coded_term"] == "Arthralgia"), None)
         check("Arthralgia row present", arth is not None)
         if arth:
-            # 14.33, not the 14.0 the untouched database shows: the AE filed in beat 3
+            # 15.33, not the 14.0 the untouched database shows: the AE filed in beat 3
             # lands in STU-002 and shifts the portfolio denominator. The number visibly
             # moves during the demo, which is worth knowing before it happens on stage —
             # so the script says "over 14" rather than quoting two decimal places.
-            check("Arthralgia PRR is over 14 after the demo AE", arth["prr"], 14.33)
+            check("Arthralgia PRR is over 15 after the demo AE", arth["prr"], 15.33)
             check("Arthralgia NOT flagged (2 cases)", arth["flagged"], False)
         check("Pruritus still tops the ranking after filing",
               (sig[0]["study_id"], sig[0]["coded_term"]), ("STU-004", "Pruritus"))
@@ -160,7 +160,7 @@ def run_once(run_no: int) -> list[str]:
         # alone silently drops.
         sig_metric = next(m for m in c.get("/api/kpi/role/safety").json()["metrics"]
                           if m["label"] == "Signals above threshold")
-        check("safety lens counts the flagged signal", sig_metric["value"], "1")
+        check("safety lens counts both flagged signals", sig_metric["value"], "2")
         check("safety lens names it rather than reporting nothing",
               "Pruritus" in (sig_metric["sub"] or ""))
 
@@ -170,11 +170,65 @@ def run_once(run_no: int) -> list[str]:
         check("unknown PI falls back rather than erroring",
               c.get("/role/investigator?pi=nobody").status_code, 200)
 
+        # ---- clinical investigation: the case, the cluster, the retrieval, the decision
+        case = c.get("/api/investigation/INV-001").json()
+        check("investigation case renders", c.get("/investigation").status_code, 200)
+        check("investigation board renders",
+              c.get("/investigation/INV-001").status_code, 200)
+        check("unknown case is a 404", c.get("/investigation/NOPE").status_code, 404)
+
+        cl = case["cluster"]
+        check("cluster is 3 events", cl["size"], 3)
+        check("all three coded to one term", cl["coded_term"], "Hepatic enzyme increased")
+        check("three different narratives, one code", cl["coded_code"], "VW-T0029")
+        check("exposure window day 41-49",
+              (cl["first_day_on_treatment"], cl["last_day_on_treatment"]), (41, 49))
+        # The line the demo turns on: close in exposure, far apart on the calendar.
+        check("8 days apart on treatment", cl["exposure_span_days"], 8)
+        check("126 days apart by calendar", cl["calendar_span_days"], 126)
+        check("system states what it does not claim", len(case["not_claimed"]), 3)
+        check("no causal claim anywhere in the case",
+              not any("caused" in o.lower() for o in case["observations"]))
+
+        inv_kpi = c.get("/api/kpi/study/AYU-008").json()
+        check("AYU-008 enrolment 137 of 500",
+              (inv_kpi["enrolled"], inv_kpi["target"]), (137, 500))
+        check("AYU-008 plan-to-date is 240", inv_kpi["expected_by_today"], 240)
+
+        # Retrieval: BM25 finds nothing for wording that is in no document, and the
+        # concept retriever carries it. This is the RRF beat and it must stay true.
+        ret = c.get("/api/investigation/INV-001/retrieve?q=deranged+LFT").json()
+        check("BM25 finds nothing for 'deranged LFT'",
+              len(ret["retrievers"]["bm25"]["results"]), 0)
+        check("concept expansion finds it anyway",
+              len(ret["retrievers"]["concept"]["results"]) > 0)
+        check("fusion still returns a ranking", len(ret["fusion"]["results"]) > 0)
+        check("second retriever is not called dense",
+              "not a dense model" in ret["retrievers"]["concept"]["kind"])
+
+        # The decision, and the audit row it must be written with.
+        seq_before = c.get("/api/audit/verify").json()["count"]
+        posted = c.post("/investigation/INV-001/decision", data={
+            "action": "escalate",
+            "reason": "Potential emerging safety pattern requiring further assessment.",
+            "evidence_count": 7,
+        }, follow_redirects=False)
+        check("decision accepted", posted.status_code, 303)
+        after_decision = c.get("/api/audit/verify").json()
+        check("decision appended exactly one audit row",
+              after_decision["count"], seq_before + 1)
+        check("chain still intact after the decision", after_decision["ok"])
+        check("decision is visible on the board",
+              "Decision recorded" in c.get("/investigation/INV-001").text)
+        check("a decision without a known action is refused",
+              c.post("/investigation/INV-001/decision",
+                     data={"action": "bogus", "reason": "x"}).status_code, 400)
+
         # ---- beat 5: audit
         after = c.get("/api/audit/verify").json()
-        check("chain intact after filing, 9 events", after["ok"] and after["count"] == 9)
+        check("chain intact after filing, 11 events", after["ok"] and after["count"] == 11)
         check("audit page renders", c.get("/audit?verify=1").status_code, 200)
-        check("audit filters by actor", "1 of 9" in c.get("/audit?actor=demo.operator").text)
+        check("audit filters by actor", "2 of 11" in c.get("/audit?actor=demo.operator").text)
 
         # ---- beat 6, first half: the storage layer refuses the edit outright.
         # Engine-dependent since the move to Postgres — SQLite raises from a trigger
@@ -210,7 +264,8 @@ def run_once(run_no: int) -> list[str]:
                      "/health", "/docs", "/api/fhir/ResearchStudy/STU-001",
                      "/api/export/sdtm/dm.csv",
                      "/role/investigator", "/role/safety", "/role/leadership",
-                     "/api/kpi/role/leadership"):
+                     "/api/kpi/role/leadership", "/investigation", "/investigation/INV-001",
+                     "/api/investigation/INV-001"):
             check(f"route {path}", c.get(path).status_code, 200)
 
     return check.failures

@@ -10,7 +10,7 @@ notifications off.
 | # | Screen | The line that matters | Time |
 |---|---|---|---|
 | 0 | `/` |  *(optional)* synthetic data · not MedDRA · then click **Portfolio** | 0:15 |
-| 1 | `/portfolio` | 7 studies · 222 of 530 · **8 alerts, thresholds from config** · lag is vs **plan-to-date**, not final target | 0:45 |
+| 1 | `/portfolio` | 8 active studies · 359 of 1030 · **9 alerts, thresholds from config** · lag is vs **plan-to-date**, not final target | 0:45 |
 | 2 | click EC alert → `/study/STU-002` | approval expires in **21 days** — a lapsed approval is a **stop-work condition** | 0:40 |
 | 3 | `/ae` — type it live | `severe diarhea and dehydration since last night` · STU-002 · AIIA-002-004 · severe · probable · **tick Serious** | 1:10 |
 | | | → **Diarrhoea VW-T0012, 0.93, through a typo** · source says **curated, not MedDRA** · **24-hour clock, NDCT 2019** | |

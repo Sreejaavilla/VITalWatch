@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Case {{ case.intervention }} — {{ settings.app_name }}{% endblock %}
+
+{% block content %}
+<div class="inv">
+
+  <p class="inv-eyebrow">Clinical investigation · case {{ case.case_id }}</p>
+  <h1 class="mt-2 text-[30px] font-semibold leading-tight tracking-tight">
+    Case {{ case.intervention }}
+  </h1>
+  <p class="mt-2 max-w-2xl text-[15px] leading-relaxed text-slate-400">
+    What is putting this trial at risk?
+  </p>
+
+  <div class="mt-7 grid gap-5 lg:grid-cols-[1.1fr_1fr]">
+
+    {# The file. Every value here is read from the study row, not written into the page. #}
+    <div class="rounded border border-slate-800 bg-[#111c2f] p-5">
+      <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Case file</p>
+      <dl class="mt-3 grid gap-x-6 gap-y-3 sm:grid-cols-2">
+        {% for label, value in [
+          ('Investigational intervention', case.intervention ~ ' — ' ~ case.formulation),
+          ('Indication', study.therapeutic_area ~ ' · ' ~ case.indication),
+          ('Trial', 'Phase ' ~ study.phase ~ ' randomised controlled'),
+          ('Protocol', study.protocol_no),
+          ('CTRI', study.ctri_number or 'not registered'),
+          ('Principal investigator', study.pi_name),
+          ('Sites', site_count ~ ' linked · ' ~ sites_activated ~ ' activated'),
+          ('Enrolment', study.actual_enrolment ~ ' of ' ~ study.target_enrolment ~ ' participants')
+        ] %}
+          <div>
+            <dt class="text-[11px] uppercase tracking-wide text-slate-500">{{ label }}</dt>
+            <dd class="mt-0.5 text-[13.5px] text-slate-200">{{ value }}</dd>
+          </div>
+        {% endfor %}
+      </dl>
+
+      <div class="mt-4 flex items-center gap-2 border-t border-slate-800 pt-3">
+        <span class="ind-dot" style="background:#ef4444"></span>
+        <span class="text-[13px] font-medium text-red-300">Trial status — AT RISK</span>
+        <span class="ml-auto text-[11px] text-slate-500">
+          derived from the four indicators, not stored
+        </span>
+      </div>
+    </div>
+
+    {# The four lights. #}
+    <div class="grid gap-3 sm:grid-cols-2">
+      {% for i in indicators %}
+        <div class="ind ind-{{ i.tone }}">
+          <div class="flex items-center gap-2">
+            <span class="ind-dot"></span>
+            <span class="text-[12.5px] font-medium text-slate-200">{{ i.label }}</span>
+          </div>
+          <p class="mt-1.5 text-[12px] leading-relaxed text-slate-300">{{ i.value }}</p>
+          <p class="mt-1 text-[10.5px] leading-relaxed text-slate-500">{{ i.definition }}</p>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="mt-7 flex flex-wrap items-center gap-3">
+    <a href="/investigation/{{ case.case_id }}"
+       class="rounded bg-cyan-500 px-5 py-2.5 text-[13.5px] font-semibold text-slate-900 transition hover:bg-cyan-400">
+      Start investigation →
+    </a>
+    <a href="/study/{{ case.study_id }}" class="btn btn-quiet text-slate-400">Study record</a>
+    <a href="/api/investigation/{{ case.case_id }}" class="btn btn-quiet text-slate-400">JSON</a>
+  </div>
+
+  <p class="mt-6 max-w-3xl text-[11.5px] leading-relaxed text-slate-500">
+    <span class="font-medium text-slate-400">AYU-008 is invented</span>, as are its
+    constituents, the historical trials and the literature this investigation retrieves.
+    The safety concepts are real clinical practice; their application to this formulation
+    is fiction. No real herb is named next to a fabricated liver finding, and the corpus
+    marks the provenance of every document it returns.
+  </p>
+
+</div>
+{% endblock %}

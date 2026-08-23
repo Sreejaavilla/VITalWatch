@@ -43,6 +43,7 @@
       <p class="nav-section">Pharmacovigilance</p>
       {{ nav_link('/ae', 'Adverse events', request, badge=nav_counts.open_saes if nav_counts else None) }}
       {{ nav_link('/signals', 'Safety signals', request, badge=nav_counts.signals if nav_counts else None) }}
+      {{ nav_link('/investigation', 'Investigation', request) }}
 
       <p class="nav-section">Compliance</p>
       {{ nav_link('/audit', 'Audit trail', request) }}

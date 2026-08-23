@@ -101,3 +101,92 @@ body { font-feature-settings: "cv05", "ss01"; }
   font-size: .6875rem; font-variant-numeric: tabular-nums;
   background: #7f1d1d; color: #fecaca;
 }
+
+/* --- investigation room -------------------------------------------------------
+   The investigation is the one screen that changes ground colour, and that is the
+   point: stepping into it should feel like stepping into a different room, so the
+   panel knows a mode changed without being told. Navy and cyan, evidence on white
+   cards, red reserved for an actual safety finding and amber for "a human should
+   look". No forensic kitsch — the metaphor is in how the screen behaves. */
+.inv {
+  background: #0b1220;
+  color: #cbd5e1;
+  margin: -1.5rem -2rem;      /* bleed past main's padding, edge to edge */
+  padding: 1.5rem 2rem 2.5rem;
+  min-height: calc(100vh - 3rem);
+}
+.inv h1, .inv h2, .inv h3 { color: #f1f5f9; }
+.inv-rule { border: 0; border-top: 1px solid #1e293b; margin: 1.75rem 0; }
+.inv-eyebrow {
+  font-size: .6875rem; letter-spacing: .14em; text-transform: uppercase;
+  color: #22d3ee; font-weight: 600;
+}
+
+/* An evidence card. Collapsed it is a filing-cabinet tab; open it is a document. */
+.ev {
+  background: #111c2f; border: 1px solid #1e293b; border-radius: .375rem;
+  overflow: hidden; transition: border-color .15s;
+}
+.ev[open] { border-color: #22d3ee; }
+.ev > summary {
+  cursor: pointer; list-style: none; padding: .875rem 1rem;
+  display: flex; align-items: center; gap: .75rem;
+}
+.ev > summary::-webkit-details-marker { display: none; }
+.ev > summary:hover { background: #16233c; }
+.ev-num {
+  font-size: .625rem; letter-spacing: .1em; color: #64748b;
+  font-variant-numeric: tabular-nums;
+}
+.ev-title { color: #e2e8f0; font-size: .875rem; font-weight: 500; }
+.ev-open { margin-left: auto; font-size: .6875rem; color: #22d3ee; }
+.ev[open] .ev-open::after { content: "close"; }
+.ev:not([open]) .ev-open::after { content: "open"; }
+.ev-body { padding: 0 1rem 1.125rem; font-size: .8125rem; line-height: 1.6; }
+
+/* Documents sit on white inside the dark room, because a document is a document. */
+.doc {
+  background: #f8fafc; color: #1e293b; border-radius: .25rem;
+  padding: .875rem 1rem; font-size: .8125rem; line-height: 1.6;
+}
+.doc-src { font-size: .6875rem; color: #64748b; }
+
+/* Patient cards, and the moment they stop being three separate things. */
+.pt {
+  background: #f8fafc; color: #0f172a; border-radius: .25rem; padding: .75rem .875rem;
+  border-left: 3px solid #94a3b8;
+}
+.pt-linked { border-left-color: #ef4444; }
+.inv-cluster[open] .pt { animation: draw-together .5s ease-out both; }
+.inv-cluster[open] .pt:nth-child(2) { animation-delay: .1s; }
+.inv-cluster[open] .pt:nth-child(3) { animation-delay: .2s; }
+@keyframes draw-together {
+  from { opacity: .35; transform: translateY(-10px) scale(.97); }
+  to   { opacity: 1;   transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .inv-cluster[open] .pt { animation: none; }
+}
+
+/* Indicator lights on the case file. */
+.ind { border: 1px solid #1e293b; border-radius: .375rem; padding: .875rem 1rem; background: #111c2f; }
+.ind-red   { border-color: #7f1d1d; background: #1a1113; }
+.ind-amber { border-color: #78350f; background: #191510; }
+.ind-green { border-color: #14532d; background: #101a14; }
+.ind-dot { width: .5rem; height: .5rem; border-radius: 9999px; display: inline-block; }
+.ind-red   .ind-dot { background: #ef4444; }
+.ind-amber .ind-dot { background: #f59e0b; }
+.ind-green .ind-dot { background: #22c55e; }
+
+/* Retrieval ranking columns. */
+.rank { font-variant-numeric: tabular-nums; }
+.rank-row { display: flex; gap: .5rem; align-items: baseline; padding: .3rem 0; border-bottom: 1px solid #1e293b; }
+.rank-row:last-child { border-bottom: 0; }
+.rank-n { color: #64748b; font-size: .6875rem; width: 1.25rem; }
+.chip {
+  display: inline-block; font-size: .625rem; padding: .05rem .35rem; border-radius: .1875rem;
+  background: #1e293b; color: #94a3b8; letter-spacing: .02em;
+}
+.chip-both { background: #0e7490; color: #ecfeff; }
+.chip-concept { background: #4c1d95; color: #ede9fe; }
+.chip-lex { background: #1e3a5f; color: #dbeafe; }

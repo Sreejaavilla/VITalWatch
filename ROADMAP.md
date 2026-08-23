@@ -201,7 +201,7 @@ The parts judges probe.
 
 ### Data
 
-- [x] `app/datagen.py` produces a portfolio that tells a story: 8 studies, 12 sites, ~400
+- [x] `app/datagen.py` produces a portfolio that tells a story: 9 studies, 12 sites, ~570
   subjects, **two studies deliberately behind target**, **one EC approval expiring in under
   30 days**, **three overdue monitoring visits**, ~50 AEs of which 6 are serious, **one AE
   term over-represented in one study**. Verify: every alert type has something to fire on and

@@ -25,7 +25,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from . import alerts, audit, fhir, kpi, pv, roles, sdtm, signals
+from . import alerts, audit, case_data, fhir, investigation, kpi, pv, retrieval, roles, sdtm, signals
 from .config import settings
 # Imported by name, not as `db`: every route already binds `db` to its connection, and
 # a module of the same name would be shadowed inside exactly the functions that use it.
@@ -386,6 +386,191 @@ def api_role_kpi(
             }
             for m in data["metrics"]
         ],
+    }
+
+
+# --------------------------------------------------------------- clinical investigation
+
+#: Queries offered as one-click presets under the retrieval panel. The second is the
+#: one worth clicking on stage: those words appear in no document in the corpus, so BM25
+#: returns nothing and the concept retriever carries the result on its own.
+RETRIEVAL_PRESETS = (
+    "hepatic enzyme elevation monitoring",
+    "deranged LFT",
+    "recruitment eligibility criteria",
+    "causality assessment responsibility",
+)
+
+
+def _case_context(db: Connection) -> dict:
+    """The constants every investigation screen needs, in template-friendly form."""
+    return {
+        "case_id": case_data.CASE_ID,
+        "study_id": case_data.STUDY_ID,
+        "intervention": case_data.INTERVENTION,
+        "formulation": case_data.FORMULATION,
+        "indication": case_data.INDICATION,
+        "protocol": case_data.PROTOCOL,
+        "protocol_observation": case_data.PROTOCOL_OBSERVATION,
+        "decisions": case_data.DECISIONS,
+        "escalation_reasons": case_data.ESCALATION_REASONS,
+    }
+
+
+@app.get("/investigation", response_class=HTMLResponse, tags=["investigation"])
+def investigation_case(request: Request, db: Connection = Depends(get_db)):
+    """The case file: four indicators, each computed rather than captioned."""
+    study = db.execute(
+        "SELECT * FROM studies WHERE id = ?", (case_data.STUDY_ID,)
+    ).fetchone()
+    if study is None:
+        raise HTTPException(404, "The investigation case is not present in this database")
+
+    counts = db.execute(
+        """SELECT COUNT(*) AS linked,
+                  SUM(CASE WHEN si.status = 'activated' THEN 1 ELSE 0 END) AS activated
+             FROM study_sites ss JOIN sites si ON si.id = ss.site_id
+            WHERE ss.study_id = ?""",
+        (case_data.STUDY_ID,),
+    ).fetchone()
+
+    return page(
+        request, "investigation_case.html", db=db,
+        case=_case_context(db), study=study,
+        indicators=investigation.indicators(db, case_data.STUDY_ID),
+        site_count=counts["linked"], sites_activated=counts["activated"],
+    )
+
+
+@app.get("/investigation/{case_id}", response_class=HTMLResponse, tags=["investigation"])
+def investigation_board(
+    case_id: str, request: Request, q: str | None = None, expand: bool = False,
+    db: Connection = Depends(get_db),
+):
+    """The board. One page load, then every card opens client-side.
+
+    Deliberately not a route per evidence card: against a hosted database each step
+    would be another round trip, and a demo that pauses between beats is a demo that
+    looks broken.
+    """
+    if case_id != case_data.CASE_ID:
+        raise HTTPException(404, f"No investigation case {case_id!r}")
+
+    r = investigation.report(db, case_data.STUDY_ID)
+    if r["cluster"] is None:
+        raise HTTPException(409, "No cluster in this database — reseed before demonstrating")
+
+    # An empty or whitespace query falls back rather than erroring, same policy as the
+    # audit filters.
+    hits = retrieval.search(q) if q and q.strip() else r["retrieval"]
+
+    corpus = retrieval.load_corpus()
+    summary_steps = [
+        ("Recruitment deviation", f"{r['recruitment']['deviation_pct']:+.1f}% against plan-to-date."),
+        ("Adverse-event cluster", f"{r['cluster'].size} similar events identified across {r['cluster'].calendar_span_days} calendar days."),
+        ("Cross-source evidence", f"{len(hits['fused'])} documents retrieved from {hits['corpus_size']}."),
+        ("Potential safety pattern", f"PRR {r['signal'].prr:.2f}, above the screening threshold." if r["signal"] and r["signal"].prr else "Above the screening criterion."),
+        ("Investigator decision", "Recorded by a named actor with a stated reason."),
+        ("Accountability", "Written to the append-only audit chain in the same transaction."),
+    ]
+
+    return page(
+        request, "investigation_board.html", db=db,
+        case=_case_context(db), r=r, rec=r["recruitment"],
+        retrieval=hits, presets=RETRIEVAL_PRESETS, expand=expand,
+        k1=retrieval.K1, b=retrieval.B, rrf_k=retrieval.RRF_K,
+        ayurveda=[d for d in corpus if d.kind == "ayurveda"],
+        historical=[d for d in corpus if d.kind == "historical"],
+        evidence_count=len(hits["fused"]) + 1,
+        decisions=investigation.decisions(db, case_id),
+        summary_steps=summary_steps,
+    )
+
+
+@app.post("/investigation/{case_id}/decision", tags=["investigation"])
+def investigation_decide(
+    case_id: str,
+    action: str = Form(...),
+    reason: str = Form(...),
+    evidence_count: int = Form(0),
+    db: Connection = Depends(get_db),
+):
+    """Record the investigator's decision, and its audit row, in one transaction."""
+    if case_id != case_data.CASE_ID:
+        raise HTTPException(404, f"No investigation case {case_id!r}")
+    if action not in case_data.DECISIONS:
+        raise HTTPException(400, f"Unknown decision {action!r}")
+    if not reason.strip():
+        raise HTTPException(400, "A decision must carry a reason")
+
+    investigation.decide(
+        db, case_id=case_id, study_id=case_data.STUDY_ID, action=action,
+        reason=reason.strip(), actor=DEMO_ACTOR, evidence_count=evidence_count,
+    )
+    return RedirectResponse(f"/investigation/{case_id}#decision", status_code=303)
+
+
+@app.get("/api/investigation/{case_id}", tags=["investigation"])
+def api_investigation(case_id: str, db: Connection = Depends(get_db)):
+    """The case as JSON, including what the system explicitly does not claim."""
+    if case_id != case_data.CASE_ID:
+        raise HTTPException(404, f"No investigation case {case_id!r}")
+    r = investigation.report(db, case_data.STUDY_ID)
+    cluster = r["cluster"]
+    return {
+        "case_id": case_id,
+        "study_id": case_data.STUDY_ID,
+        "generated_at": utcnow(),
+        "finding": r["finding"],
+        "observations": r["observations"],
+        "confidence": r["confidence"],
+        "next_step": r["next_step"],
+        "not_claimed": [
+            "No causal relationship between the intervention and the events.",
+            "No determination that the monitoring interval is inadequate.",
+            "Disproportionality is a triage statistic, not an incidence rate.",
+        ],
+        "cluster": None if cluster is None else {
+            "coded_term": cluster.coded_term,
+            "coded_code": cluster.coded_code,
+            "size": cluster.size,
+            "first_day_on_treatment": cluster.first_day,
+            "last_day_on_treatment": cluster.last_day,
+            "exposure_span_days": cluster.span_days,
+            "calendar_span_days": cluster.calendar_span_days,
+            "subjects": [e.subject_code for e in cluster.events],
+        },
+        "evidence": [
+            {"id": h.document.id, "title": h.document.title, "source": h.document.source,
+             "provenance": h.document.provenance, "found_by": h.found_by,
+             "bm25_rank": h.bm25_rank, "concept_rank": h.concept_rank, "rrf": h.score}
+            for h in r["retrieval"]["fused"]
+        ],
+        "data": "synthetic",
+    }
+
+
+@app.get("/api/investigation/{case_id}/retrieve", tags=["investigation"])
+def api_retrieve(case_id: str, q: str):
+    """Both rankings and the fusion, so the retrieval can be inspected on its own."""
+    if case_id != case_data.CASE_ID:
+        raise HTTPException(404, f"No investigation case {case_id!r}")
+    result = retrieval.search(q)
+    return {
+        "query": q,
+        "corpus_size": result["corpus_size"],
+        "retrievers": {
+            "bm25": {"kind": "lexical BM25", "k1": retrieval.K1, "b": retrieval.B,
+                     "results": [{"rank": h.rank, "id": h.document.id, "score": h.score,
+                                  "matched": h.matched} for h in result["bm25"]]},
+            "concept": {"kind": "curated-vocabulary concept expansion (not a dense model)",
+                        "results": [{"rank": h.rank, "id": h.document.id, "score": h.score,
+                                     "matched": h.matched} for h in result["concept"]]},
+        },
+        "fusion": {"method": "reciprocal rank fusion", "k": retrieval.RRF_K,
+                   "results": [{"rank": h.rank, "id": h.document.id, "score": h.score,
+                                "bm25_rank": h.bm25_rank, "concept_rank": h.concept_rank,
+                                "found_by": h.found_by} for h in result["fused"]]},
     }
 
 

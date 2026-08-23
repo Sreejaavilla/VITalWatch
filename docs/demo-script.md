@@ -41,8 +41,8 @@ two sentences can be said over the portfolio while it loads.
 ### 1 · Portfolio — 45 seconds
 **Click `Portfolio`** (or open `/portfolio`).
 
-> "This is every trial at AIIA on one screen. Seven active studies, 222 subjects enrolled
-> against a target of 530, ten of twelve sites activated, 42 open queries."
+> "This is every trial at AIIA on one screen. Eight active studies, 359 subjects enrolled
+> against a target of 1,030, ten of twelve sites activated, 42 open queries."
 
 Point at the alerts panel.
 
@@ -160,6 +160,59 @@ psql "$DATABASE_URL" -c "DROP TRIGGER audit_events_no_update ON audit_events;
 > put a real one into."
 
 ---
+
+## The investigation route — an alternative spine for the whole demo
+
+`/investigation` is not an eighth beat. It is a **different way to run beats 2 through 5**,
+and it is stronger, because it carries the same material as one story instead of four
+screens. Use it when the room is technical or when you are asked "so what does it
+actually *do*?"
+
+**Beat I1 · The case file — 30 seconds.** Open `/investigation`.
+
+> "One trial, treated as a case. Four indicators, and every one is computed — recruitment
+> is 42.9% behind plan, three similar adverse events, a signal above threshold, and a
+> protocol observation. AYU-008 is invented and the page says so before it says anything
+> else."
+
+Click **Start investigation**.
+
+**Beat I2 · The evidence — 60 seconds.** Open cards 01, 02, then 03. Stop on 03.
+
+> "Three events. Three sites. Three different ways of writing the same thing — 'raised
+> ALT', 'deranged LFT', 'raised ALT and AST'. All three coded to one controlled term by
+> the same coder that ran on the portfolio."
+
+Then the line the whole feature exists for:
+
+> "**Eight days apart on treatment. A hundred and twenty-six days apart on the calendar.**
+> Read chronologically these are three unrelated events four months apart. Aligned by
+> exposure day they fall inside a nine-day window. That is the difference between an
+> event list and an investigation."
+
+**Beat I3 · How it was found — 45 seconds.** Scroll to *How the evidence was found*.
+Click the **`deranged LFT`** preset.
+
+> "BM25 returns nothing — those three words appear in no document in the corpus. The
+> concept retriever returns eight, because the phrase resolves to the same controlled
+> term the literature calls transaminase elevation. Two retrievers that fail differently,
+> fused on rank, not score."
+
+**Say the limit out loud here**, unprompted: *the second retriever is not a dense vector
+model and I do not call it one — see Q&A 10b.*
+
+**Beat I4 · The decision — 30 seconds.** Scroll to the decision panel. Ask the panel what
+the investigator should do. Take their answer. Select it, pick a reason, **Confirm**.
+
+> "The system did not decide. It said 'investigator review required' and stopped. A person
+> decided, and that decision is now in the audit trail with its evidence count — written
+> in the same transaction, so it could not have been recorded without its trail."
+
+Then **click through to `/audit` and verify**, which lands you in beat 6 with the chain
+one row longer than it was. The tamper demo follows exactly as written.
+
+Total: **2:45**, replacing beats 2–5 (2:35). Effectively free, and it ends where beat 6
+begins.
 
 ## Not a beat — the answer to "who actually uses this?"
 
