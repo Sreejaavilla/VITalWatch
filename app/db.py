@@ -29,6 +29,7 @@ from __future__ import annotations
 import re
 import sqlite3
 from collections.abc import Mapping
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Iterable, Union
 
@@ -367,6 +368,10 @@ class PostgresConnection:
         with self._raw.cursor() as cursor:
             cursor.execute(script)
 
+    def pipeline(self):
+        """psycopg pipeline mode: send many statements without waiting for each reply."""
+        return self._raw.pipeline()
+
     def commit(self) -> None:
         self._raw.commit()
 
@@ -491,6 +496,26 @@ def is_empty(conn: Connection) -> bool:
     return conn.execute("SELECT COUNT(*) FROM studies").fetchone()[0] == 0
 
 
+@contextmanager
+def bulk(conn: Connection):
+    """Group many small writes into as few network round trips as possible.
+
+    The seed is roughly 2,400 single-row INSERTs. Against a local file that is
+    instantaneous; against a hosted Postgres it is 2,400 sequential round trips, which at
+    a measured 152 ms to Supabase is over six minutes — long enough that a platform
+    health check gives up on the deployment before it finishes booting.
+
+    Pipeline mode sends the statements without waiting for each reply, which collapses
+    that to a handful of round trips. No caller changes: the block below is the only
+    thing that knows this is happening. A no-op on SQLite, which has no round trips.
+    """
+    if isinstance(conn, PostgresConnection):
+        with conn.pipeline():
+            yield
+    else:
+        yield
+
+
 def init(seed: bool = True) -> Connection:
     """Create the schema and seed if the database has no studies.
 
@@ -503,7 +528,8 @@ def init(seed: bool = True) -> Connection:
     if seed and is_empty(conn):
         from . import datagen  # imported late — datagen imports models, not db
 
-        datagen.seed(conn)
+        with bulk(conn):
+            datagen.seed(conn)
     return conn
 
 

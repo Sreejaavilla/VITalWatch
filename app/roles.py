@@ -304,6 +304,8 @@ def safety(conn: Connection) -> dict:
         "signals": found[:8],
         "signals_total": len(found),
         "flagged": len(flagged),
+        # Handed to page() so the sidebar badge does not run detection a second time.
+        "found_signals": found,
     }
 
 

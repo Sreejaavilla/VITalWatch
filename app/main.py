@@ -77,37 +77,48 @@ app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="stat
 
 
 def page(
-    request: Request, template: str, db: Connection | None = None, **context
+    request: Request,
+    template: str,
+    db: Connection | None = None,
+    found_signals: list | None = None,
+    **context,
 ) -> HTMLResponse:
     """Render a template with the values every page needs.
 
     `db` is optional only so a page with nothing to badge can omit it; when present the
     sidebar counts come from the same connection as the page's own data, so the badge
     can never disagree with the table underneath it.
+
+    `found_signals` is a page handing over detection work it has already done. The
+    sidebar badge needs the same list the page is about to render, and running the
+    detection twice in one request was a straightforward waste — invisible against a
+    local file, four extra network round trips against a hosted database.
     """
     return templates.TemplateResponse(
         request=request,
         name=template,
         context={
             "settings": settings,
-            "nav_counts": nav_counts(db) if db is not None else None,
+            "nav_counts": nav_counts(db, found_signals) if db is not None else None,
             **context,
         },
     )
 
 
-def nav_counts(db: Connection) -> dict:
+def nav_counts(db: Connection, found: list | None = None) -> dict:
     """The two numbers the sidebar badges, computed per request.
 
     Only counts that represent work waiting for someone. A badge on a nav item that is
     merely non-zero teaches people to ignore badges.
     """
+    if found is None:
+        found = signals.detect(db)
     return {
         "open_saes": db.execute(
             "SELECT COUNT(*) FROM adverse_events WHERE serious = 1 AND timeline_status "
             "IN ('breached', 'due_soon')"
         ).fetchone()[0],
-        "signals": len([s for s in signals.detect(db) if s.flagged]),
+        "signals": len([s for s in found if s.flagged]),
     }
 
 
@@ -230,27 +241,25 @@ def home(request: Request, db: Connection = Depends(get_db)):
     inspector, anyone who did not watch the demo — needs the synthetic-data and MedDRA
     position stated before they read a single number, not discovered in a footnote.
     """
-    def count(sql: str) -> int:
-        return db.execute(sql).fetchone()[0]
-
-    counts = {
-        "studies": count("SELECT COUNT(*) FROM studies"),
-        "sites": count("SELECT COUNT(*) FROM sites"),
-        "subjects": count("SELECT COUNT(*) FROM subjects"),
-        "visits": count("SELECT COUNT(*) FROM visits"),
-        "adverse_events": count("SELECT COUNT(*) FROM adverse_events"),
-        "coded": count("SELECT COUNT(*) FROM adverse_events WHERE coded_term IS NOT NULL"),
-    }
+    # One query rather than eight. Each of these was its own round trip, which costs
+    # nothing against a local file and a tenth of a second each against a hosted one.
+    counts = dict(db.execute("""
+        SELECT (SELECT COUNT(*) FROM studies)        AS studies,
+               (SELECT COUNT(*) FROM sites)          AS sites,
+               (SELECT COUNT(*) FROM subjects)       AS subjects,
+               (SELECT COUNT(*) FROM visits)         AS visits,
+               (SELECT COUNT(*) FROM adverse_events) AS adverse_events,
+               (SELECT COUNT(*) FROM adverse_events WHERE coded_term IS NOT NULL) AS coded,
+               (SELECT COUNT(*) FROM adverse_events WHERE timeline_status = 'breached')  AS breached,
+               (SELECT COUNT(*) FROM adverse_events WHERE timeline_status = 'due_soon')  AS due_soon,
+               (SELECT COUNT(*) FROM audit_events)   AS audit_events
+    """).fetchone())
+    breached, due_soon = counts["breached"], counts["due_soon"]
 
     raised = alerts.evaluate(db)
     critical = [a for a in raised if a.severity.value == "critical"]
-    breached = count(
-        "SELECT COUNT(*) FROM adverse_events WHERE timeline_status = 'breached'"
-    )
-    due_soon = count(
-        "SELECT COUNT(*) FROM adverse_events WHERE timeline_status = 'due_soon'"
-    )
-    flagged = [s for s in signals.detect(db) if s.flagged]
+    found = signals.detect(db)
+    flagged = [s for s in found if s.flagged]
 
     # Only genuinely time-critical things. A banner that lists everything is a banner
     # nobody reads, and the statutory deadlines are the items with a legal clock on them.
@@ -295,7 +304,7 @@ def home(request: Request, db: Connection = Depends(get_db)):
         },
         {
             "title": "Audit trail", "href": "/audit",
-            "stat": f"{count('SELECT COUNT(*) FROM audit_events')} events",
+            "stat": f"{counts['audit_events']} events",
             "body": "Every change in sequence with before and after state, each entry "
                     "committing to the hash of the entry before it.",
             "detail": "UPDATE and DELETE are refused by the database itself, so the "
@@ -305,8 +314,8 @@ def home(request: Request, db: Connection = Depends(get_db)):
         },
     ]
 
-    return page(request, "home.html", db=db, counts=counts, cards=cards,
-                urgent=urgent, chain=audit.verify(db))
+    return page(request, "home.html", db=db, found_signals=found, counts=counts,
+                cards=cards, urgent=urgent, chain=audit.verify(db))
 
 
 @app.get("/role/{role_id}", response_class=HTMLResponse, tags=["pages"])
@@ -614,15 +623,16 @@ def safety_signals(
         request,
         "signals.html",
         db=db,
+        found_signals=found,
         signals=found,
         flagged=[s for s in found if s.flagged],
         min_cases=min_cases,
         case_floor=signals.MIN_CASES,
         threshold=signals.PRR_THRESHOLD,
-        coded_total=db.execute(
-            "SELECT COUNT(*) FROM adverse_events WHERE coded_term IS NOT NULL"
-        ).fetchone()[0],
-        ae_total=db.execute("SELECT COUNT(*) FROM adverse_events").fetchone()[0],
+        **dict(db.execute("""
+            SELECT (SELECT COUNT(*) FROM adverse_events WHERE coded_term IS NOT NULL) AS coded_total,
+                   (SELECT COUNT(*) FROM adverse_events) AS ae_total
+        """).fetchone()),
         term_count=len(pv.load_terms()),
     )
 
