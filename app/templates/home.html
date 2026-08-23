@@ -5,7 +5,7 @@
 <section class="panel overflow-hidden">
   <div class="grid gap-8 p-8 lg:grid-cols-[1.4fr_1fr] lg:p-10">
     <div>
-      <p class="text-[11px] font-semibold uppercase tracking-[0.12em] text-teal-700">
+      <p class="text-[11px] font-semibold uppercase tracking-[0.12em] text-[color:var(--institution)]">
         {{ settings.org_name }}
       </p>
       <h1 class="mt-3 text-[32px] font-semibold leading-tight tracking-tight text-slate-900">
@@ -34,10 +34,8 @@
       </p>
     </div>
 
-    <div class="rounded border border-slate-200 bg-slate-50/70 p-5">
-      <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">
-        Currently loaded
-      </p>
+    <div class="rounded-[3px] border p-5" style="border-color:var(--rule); background:var(--surface-sunk)">
+      <p class="label">Currently loaded</p>
       <dl class="mt-3 grid grid-cols-2 gap-x-4 gap-y-3">
         {% for label, value in [
           ('Studies', counts.studies), ('Sites', counts.sites),
@@ -45,15 +43,15 @@
           ('Adverse events', counts.adverse_events), ('Coded', counts.coded)
         ] %}
           <div>
-            <dt class="text-[11px] text-slate-500">{{ label }}</dt>
-            <dd class="text-[19px] font-semibold tabular-nums text-slate-900">{{ value }}</dd>
+            <dt class="label">{{ label }}</dt>
+            <dd class="metric-value" style="font-size:1.25rem">{{ value }}</dd>
           </div>
         {% endfor %}
       </dl>
 
       <div class="mt-4 border-t border-slate-200 pt-3">
         <div class="flex items-center gap-2">
-          <span class="h-1.5 w-1.5 rounded-full {{ 'bg-emerald-500' if chain.ok else 'bg-red-500' }}"></span>
+          <span class="h-1.5 w-1.5 rounded-full {{ 'bg-[color:var(--within)]' if chain.ok else 'bg-[color:var(--breach)]' }}"></span>
           <span class="text-[12px] font-medium text-slate-700">
             {% if chain.ok %}Audit chain intact{% else %}Chain broken at sequence {{ chain.seq }}{% endif %}
           </span>
@@ -67,8 +65,8 @@
 </section>
 
 {% if urgent %}
-<section class="mt-4 rounded border border-red-200 bg-red-50 px-4 py-3">
-  <div class="flex flex-wrap items-center gap-x-6 gap-y-1 text-[13px] text-red-900">
+<section class="mt-4 rounded border border-[color:var(--breach-rule)] bg-[color:var(--breach-bg)] px-4 py-3">
+  <div class="flex flex-wrap items-center gap-x-6 gap-y-1 text-[13px] text-[color:var(--breach)]">
     <span class="font-medium">Needs attention now</span>
     {% for item, href in urgent %}
       <a href="{{ href }}" class="hover:underline">{{ item }}</a>
@@ -81,12 +79,12 @@
   {% for card in cards %}
   <a href="{{ card.href }}" class="panel group block p-5 transition hover:border-slate-300">
     <div class="flex items-baseline justify-between gap-4">
-      <h2 class="text-[15px] font-semibold text-slate-900 group-hover:text-teal-800">{{ card.title }}</h2>
+      <h2 class="text-[15px] font-semibold text-slate-900 group-hover:text-[color:var(--institution)]">{{ card.title }}</h2>
       <span class="text-[12px] tabular-nums text-slate-400">{{ card.stat }}</span>
     </div>
     <p class="mt-1.5 text-[13px] leading-relaxed text-slate-600">{{ card.body }}</p>
     <p class="mt-3 text-[11.5px] leading-relaxed text-slate-500">{{ card.detail }}</p>
-    <span class="mt-3 inline-block text-[12.5px] font-medium text-teal-700">{{ card.cta }} →</span>
+    <span class="mt-3 inline-block text-[12.5px] font-medium text-[color:var(--institution)]">{{ card.cta }} →</span>
   </a>
   {% endfor %}
 </div>

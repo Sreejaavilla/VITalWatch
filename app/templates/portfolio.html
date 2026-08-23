@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% from "_macros.html" import tile, badge, bar, page_head, note %}
+{% from "_macros.html" import tile, badge, bar, ref, page_head, note %}
 {% block title %}Portfolio — {{ settings.app_name }}{% endblock %}
 
 {% block content %}
@@ -32,7 +32,7 @@
   </div>
   <ul class="divide-y divide-slate-100">
     {% for a in alerts %}
-    {% set tone = {'critical': 'bg-red-500', 'warning': 'bg-amber-500'}.get(a.severity.value, 'bg-sky-500') %}
+    {% set tone = {'critical': 'bg-[color:var(--breach)]', 'warning': 'bg-[color:var(--review)]'}.get(a.severity.value, 'bg-[color:var(--reference)]') %}
     <li>
       <a href="{{ a.deep_link }}" class="flex items-start gap-3 px-3.5 py-2 hover:bg-slate-50">
         <span class="mt-1.5 h-2 w-2 shrink-0 rounded-full {{ tone }}"></span>
@@ -50,13 +50,13 @@
   </ul>
 </section>
 {% else %}
-<div class="mt-8 rounded border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+<div class="mt-8 rounded border border-[color:var(--within-rule)] bg-[color:var(--within-bg)] px-4 py-3 text-sm text-[color:var(--within)]">
   No alerts at the current thresholds.
 </div>
 {% endif %}
 
 <div class="mt-8 panel overflow-hidden">
-  <table class="tbl">
+  <div class="tbl-scroll"><table class="tbl">
     <thead>
       <tr>
         <th>Study</th>
@@ -74,7 +74,7 @@
       {% for s in studies %}
       <tr class="hover:bg-slate-50">
         <td>
-          <a href="/study/{{ s.id }}" class="font-medium text-slate-900 hover:text-sky-700">{{ s.title }}</a>
+          <a href="/study/{{ s.id }}" class="font-medium text-slate-900 hover:text-[color:var(--reference)]">{{ s.title }}</a>
           <div class="text-xs text-slate-500">{{ s.id }} · {{ s.protocol_no }} · {{ s.pi_name }}</div>
         </td>
         <td class="text-slate-600">{{ s.phase }}</td>
@@ -89,7 +89,7 @@
         </td>
         <td>
           <div class="flex items-center gap-2">
-            <div class="flex-1">{{ bar(s.actual_enrolment, s.target_enrolment) }}</div>
+            <div class="flex-1">{{ ref(s.actual_enrolment, s.target_enrolment, plan.get(s.id)) }}</div>
             <span class="w-16 text-right text-xs tabular-nums text-slate-600">
               {{ s.actual_enrolment }}/{{ s.target_enrolment }}
             </span>
@@ -97,7 +97,7 @@
         </td>
         <td class="text-right tabular-nums text-slate-600">{{ s.site_count }}</td>
         <td class="text-right tabular-nums text-slate-600">{{ s.open_queries }}</td>
-        <td class="text-right tabular-nums {{ 'font-semibold text-red-700' if s.saes else 'text-slate-600' }}">{{ s.saes }}</td>
+        <td class="text-right tabular-nums {{ 'font-semibold text-[color:var(--breach)]' if s.saes else 'text-slate-600' }}">{{ s.saes }}</td>
         <td class="text-xs">
           {# Inside the renewal window an approval needs action now, not at expiry. #}
           {% if s.ec_days is not none and s.ec_days <= settings.ethics_renewal_days %}
@@ -109,6 +109,6 @@
       </tr>
       {% endfor %}
     </tbody>
-  </table>
+  </table></div>
 </div>
 {% endblock %}

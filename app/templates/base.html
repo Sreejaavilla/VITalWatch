@@ -8,24 +8,28 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  {# IBM Plex: a typeface drawn for a technical institution, and the reason the mono
+     matters here — in a schema with no patient names, the coded identifier is the
+     record, so codes are set as first-class objects rather than incidental spans. #}
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
-    :root { font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+    :root { font-family: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+    h1, h2, h3 { letter-spacing: -.019em; }
   </style>
   <link rel="stylesheet" href="/static/app.css">
 </head>
-<body class="min-h-full bg-slate-100/70 text-slate-800 antialiased">
+<body class="min-h-full antialiased">
 
-<div class="flex min-h-screen">
+<div class="app-shell flex min-h-screen">
 
   {# Left rail. Nav belongs on one edge, not stretched across the top — and a persistent
      rail is what makes an operational tool feel like one rather than like a website. #}
   <aside class="sidebar">
     <a href="/" class="flex items-center gap-2.5 px-4 py-4">
-      <span class="grid h-8 w-8 shrink-0 place-items-center rounded bg-teal-400 text-[14px] font-semibold text-slate-900">V</span>
+      <span class="grid h-8 w-8 shrink-0 place-items-center rounded-[3px] border border-white/25 text-[13px] font-semibold text-white">V</span>
       <span class="leading-tight">
         <span class="block text-[15px] font-semibold tracking-tight text-white">{{ settings.app_name }}</span>
-        <span class="block text-[10px] uppercase tracking-wider text-slate-500">Clinical trials · PV</span>
+        <span class="label mt-0.5 block" style="color:#7ea6ff">Clinical trials · PV</span>
       </span>
     </a>
 
@@ -50,12 +54,12 @@
       {{ nav_link('/docs', 'API', request) }}
     </nav>
 
-    <div class="border-t border-slate-800 px-4 py-3">
-      <div class="flex items-center gap-2 text-[11px] text-slate-400">
-        <span class="h-1.5 w-1.5 rounded-full bg-amber-400"></span>
+    <div class="border-t border-white/10 px-4 py-3">
+      <div class="flex items-center gap-2 text-[11px]" style="color:#cfe0ec">
+        <span class="h-1.5 w-1.5 rounded-full" style="background:#e0a350"></span>
         Synthetic data only
       </div>
-      <p class="mt-1 text-[10.5px] leading-relaxed text-slate-500">
+      <p class="mt-1 text-[10.5px] leading-relaxed" style="color:#7ea6ff">
         {{ settings.org_name }}
       </p>
     </div>
@@ -66,8 +70,8 @@
       {% block content %}{% endblock %}
     </main>
 
-    <footer class="border-t border-slate-200 bg-white px-8 py-3">
-      <div class="flex flex-wrap gap-x-6 gap-y-1 text-[11px] text-slate-500">
+    <footer class="border-t bg-white px-8 py-3" style="border-color:var(--rule)">
+      <div class="flex flex-wrap gap-x-6 gap-y-1 text-[11px]" style="color:var(--muted)">
         <span>Demonstration system — no participant is identifiable.</span>
         <span>AE terms coded against a curated vocabulary, not MedDRA or WHODrug.</span>
       </div>

@@ -86,10 +86,8 @@ def _scalar(conn: Connection, sql: str, params: tuple = ()) -> int:
 
 
 def _expected(start_date: str, target: int, today: date) -> int:
-    """Where the enrolment plan says a study should be today. Same straight line as
-    `kpi.study_kpi`, so the two screens cannot disagree."""
-    elapsed = (today - date.fromisoformat(start_date)).days
-    return int(target * min(max(elapsed / ENROLMENT_WINDOW_DAYS, 0.0), 1.0))
+    """Where the enrolment plan says a study should be today."""
+    return kpi.expected_enrolment(start_date, target, today)
 
 
 def _pct(part: int, whole: int) -> float:

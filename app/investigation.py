@@ -212,7 +212,7 @@ def indicators(conn: Connection, study_id: str) -> list[dict]:
         ),
         "protocol": (
             "amber" if found else "green",
-            "monitoring schedule relevant to the observed timing"
+            "Monitoring schedule relevant to the observed event timing"
             if found else "no observation",
         ),
     }

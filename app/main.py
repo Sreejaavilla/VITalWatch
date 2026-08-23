@@ -589,12 +589,17 @@ def portfolio(request: Request, db: Connection = Depends(get_db)):
             ORDER BY s.id""",
         (kpi._today().isoformat(),),
     ).fetchall()
+    plan = {
+        s["id"]: kpi.expected_enrolment(s["start_date"], s["target_enrolment"])
+        for s in studies
+    }
     return page(
         request,
         "portfolio.html",
         db=db,
         k=kpi.portfolio_kpi(db),
         studies=studies,
+        plan=plan,
         alerts=alerts.evaluate(db),
         today=kpi._today(),
     )

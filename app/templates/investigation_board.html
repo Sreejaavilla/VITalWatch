@@ -68,7 +68,7 @@
             ('Actual enrolment', rec.kpi.enrolled),
             ('Deviation', '%+.1f%%'|format(rec.deviation_pct))
           ] %}
-            <div class="rounded border border-slate-800 bg-[#0b1220] p-3">
+            <div class="rounded border border-slate-800 bg-[color:#0a1622] p-3">
               <div class="text-[10.5px] uppercase tracking-wide text-slate-500">{{ label }}</div>
               <div class="mt-0.5 text-[22px] font-semibold tabular-nums text-slate-100">{{ value }}</div>
             </div>
@@ -78,15 +78,15 @@
         {# The plan/actual bar, on the same straight line the alert rule measures. #}
         <div class="mt-4">
           <div class="relative h-2.5 w-full rounded-full bg-slate-800">
-            <div class="h-2.5 rounded-full bg-red-500"
+            <div class="h-2.5 rounded-full bg-[color:var(--breach)]"
                  style="width: {{ (100 * rec.kpi.enrolled / rec.kpi.target)|round(1) }}%"></div>
-            <div class="absolute top-[-3px] h-4 w-0.5 bg-cyan-300"
+            <div class="absolute top-[-3px] h-4 w-0.5 bg-[color:#7ea6ff]"
                  style="left: {{ (100 * rec.expected / rec.kpi.target)|round(1) }}%"
                  title="Plan to date: {{ rec.expected }}"></div>
           </div>
           <div class="mt-1 flex justify-between text-[11px] text-slate-500">
             <span>0</span>
-            <span class="text-cyan-300">plan to date {{ rec.expected }}</span>
+            <span class="text-[color:#7ea6ff]">plan to date {{ rec.expected }}</span>
             <span>target {{ rec.kpi.target }}</span>
           </div>
         </div>
@@ -144,7 +144,7 @@
                 </div>
                 <div class="flex gap-1.5">
                   <dt class="text-slate-400">Day on treatment:</dt>
-                  <dd class="font-semibold text-red-700">{{ e.day_on_treatment }}</dd>
+                  <dd class="font-semibold text-[color:var(--breach)]">{{ e.day_on_treatment }}</dd>
                 </div>
               </dl>
             </div>
@@ -161,7 +161,7 @@
             ({{ r.cluster.coded_code }}) — from three differently worded narratives, between
             day {{ r.cluster.first_day }} and day {{ r.cluster.last_day }} of exposure.
           </p>
-          <p class="mt-2 text-[12.5px] leading-relaxed text-cyan-200">
+          <p class="mt-2 text-[12.5px] leading-relaxed text-[color:#a8c5ff]">
             <span class="font-semibold">{{ r.cluster.span_days }} days apart on treatment.
             {{ r.cluster.calendar_span_days }} days apart by calendar date.</span>
             Read chronologically these are three unrelated events four months apart. Aligned
@@ -192,7 +192,7 @@
             <div class="doc">
               <p class="font-medium text-slate-800">{{ d.title }}</p>
               <p class="mt-1">{{ d.text }}</p>
-              <p class="doc-src mt-2">{{ d.source }} · <span class="text-amber-700">{{ d.provenance }}</span></p>
+              <p class="doc-src mt-2">{{ d.source }} · <span class="text-[color:var(--review)]">{{ d.provenance }}</span></p>
             </div>
           {% endfor %}
         </div>
@@ -221,7 +221,7 @@
             <div class="doc">
               <p class="font-medium text-slate-800">{{ d.title }}</p>
               <p class="mt-1">{{ d.text }}</p>
-              <p class="doc-src mt-2">{{ d.source }} · <span class="text-amber-700">{{ d.provenance }}</span></p>
+              <p class="doc-src mt-2">{{ d.source }} · <span class="text-[color:var(--review)]">{{ d.provenance }}</span></p>
             </div>
           {% endfor %}
         </div>
@@ -241,11 +241,11 @@
     The intelligence is not in any one document. It is in the relationship between them.
   </p>
 
-  <div class="mt-4 rounded border border-slate-800 bg-[#0b1220] p-5">
+  <div class="mt-4 rounded border border-slate-800 bg-[color:#0a1622] p-5">
     {# Built from boxes rather than ASCII: the labels carry live values whose length
        varies, and a monospace diagram silently jams its columns together the moment a
        coded term runs long. #}
-    <p class="text-center text-[13px] font-semibold tracking-wide text-cyan-300">{{ case.intervention }}</p>
+    <p class="text-center text-[13px] font-semibold tracking-wide text-[color:#7ea6ff]">{{ case.intervention }}</p>
     <div class="mx-auto mt-2 h-4 w-px bg-slate-700"></div>
 
     <div class="grid gap-3 md:grid-cols-3">
@@ -264,8 +264,8 @@
 
     <div class="mx-auto mt-3 h-4 w-px bg-slate-700"></div>
     <div class="mx-auto max-w-md space-y-2 text-center">
-      <div class="rounded border border-cyan-800 bg-[#0e1c2b] px-4 py-2">
-        <p class="text-[12.5px] font-semibold text-cyan-300">VITALWATCH INVESTIGATION</p>
+      <div class="rounded border border-[color:#33526f] bg-[#0e1c2b] px-4 py-2">
+        <p class="text-[12.5px] font-semibold text-[color:#7ea6ff]">VITALWATCH INVESTIGATION</p>
       </div>
       <p class="text-slate-600">▼</p>
       <div class="rounded border border-red-900 bg-red-950/30 px-4 py-2">
@@ -292,13 +292,13 @@
 
   <form method="get" class="mt-3 flex flex-wrap items-center gap-2">
     <input name="q" value="{{ retrieval.query }}"
-           class="min-w-[22rem] flex-1 rounded border border-slate-700 bg-[#0b1220] px-3 py-1.5 text-[12.5px] text-slate-200 focus:border-cyan-500 focus:outline-none">
-    <button class="rounded bg-cyan-600 px-3 py-1.5 text-[12.5px] font-medium text-white hover:bg-cyan-500">
+           class="min-w-[22rem] flex-1 rounded border border-slate-700 bg-[color:#0a1622] px-3 py-1.5 text-[12.5px] text-slate-200 focus:border-[color:#7ea6ff] focus:outline-none">
+    <button class="btn btn-primary" style="background:#2f5f8f;border-color:#2f5f8f">
       Retrieve
     </button>
     {% for preset in presets %}
       <a href="?q={{ preset|urlencode }}"
-         class="rounded border border-slate-700 px-2.5 py-1.5 text-[11.5px] text-slate-400 hover:border-cyan-600 hover:text-cyan-300">{{ preset }}</a>
+         class="rounded border border-slate-700 px-2.5 py-1.5 text-[11.5px] text-slate-400 hover:border-[color:#7ea6ff] hover:text-[color:#7ea6ff]">{{ preset }}</a>
     {% endfor %}
   </form>
 
@@ -340,8 +340,8 @@
       </div>
     </div>
 
-    <div class="rounded border border-cyan-900 bg-[#0e1c2b] p-4">
-      <p class="text-[11.5px] font-semibold text-cyan-300">🔀 Reciprocal rank fusion</p>
+    <div class="rounded border border-[color:#2b3f63] bg-[#0e1c2b] p-4">
+      <p class="text-[11.5px] font-semibold text-[color:#7ea6ff]">🔀 Reciprocal rank fusion</p>
       <p class="mt-0.5 text-[11px] text-slate-500">
         score = Σ 1/(k + rank), k={{ rrf_k }}. Ranks only — the two score scales never meet.
       </p>
@@ -426,7 +426,7 @@
       <form method="post" action="/investigation/{{ case.case_id }}/decision" class="mt-3 space-y-3">
         <div class="grid gap-2">
           {% for key, (label, detail) in case.decisions.items() %}
-            <label class="flex cursor-pointer items-start gap-2.5 rounded border border-slate-700 p-2.5 hover:border-cyan-700">
+            <label class="flex cursor-pointer items-start gap-2.5 rounded border border-slate-700 p-2.5 hover:border-[color:#33526f]">
               <input type="radio" name="action" value="{{ key }}" required
                      {{ 'checked' if key == 'escalate' }} class="mt-0.5">
               <span>
@@ -442,7 +442,7 @@
         <label class="block">
           <span class="text-[11px] uppercase tracking-wide text-slate-500">Reason</span>
           <select name="reason" required
-                  class="mt-1 w-full rounded border border-slate-700 bg-[#0b1220] px-2.5 py-1.5 text-[12.5px] text-slate-200 focus:border-cyan-500 focus:outline-none">
+                  class="mt-1 w-full rounded border border-slate-700 bg-[color:#0a1622] px-2.5 py-1.5 text-[12.5px] text-slate-200 focus:border-[color:#7ea6ff] focus:outline-none">
             {% for reason in case.escalation_reasons %}
               <option value="{{ reason }}">{{ reason }}</option>
             {% endfor %}
@@ -450,7 +450,7 @@
         </label>
 
         <input type="hidden" name="evidence_count" value="{{ evidence_count }}">
-        <button class="w-full rounded bg-cyan-500 px-4 py-2 text-[13px] font-semibold text-slate-900 hover:bg-cyan-400">
+        <button class="w-full rounded-[3px] px-4 py-2 text-[13px] font-semibold" style="background:#7ea6ff;color:#0a1622">
           Confirm decision
         </button>
         <p class="text-[11px] leading-relaxed text-slate-500">
@@ -469,7 +469,7 @@
   <div class="mt-4 grid gap-2 md:grid-cols-3 lg:grid-cols-6">
     {% for step, detail in summary_steps %}
       <div class="rounded border border-slate-800 bg-[#111c2f] p-3">
-        <div class="text-[10px] uppercase tracking-wide text-cyan-400">{{ loop.index }}</div>
+        <div class="text-[10px] uppercase tracking-wide text-[color:#7ea6ff]">{{ loop.index }}</div>
         <p class="mt-1 text-[12px] font-medium text-slate-200">{{ step }}</p>
         <p class="mt-1 text-[11px] leading-relaxed text-slate-500">{{ detail }}</p>
       </div>
@@ -478,7 +478,7 @@
 
   <div class="mt-4 rounded border border-emerald-900 bg-emerald-950/30 p-4">
     <p class="text-[12.5px] font-semibold text-emerald-300">✅ Decision recorded</p>
-    <table class="tbl mt-2" style="background:transparent">
+    <div class="tbl-scroll"><table class="tbl mt-2" style="background:transparent">
       <thead><tr><th>Recorded</th><th>Actor</th><th>Action</th><th>Reason</th><th>Evidence</th></tr></thead>
       <tbody>
         {% for d in decisions %}
@@ -491,7 +491,7 @@
         </tr>
         {% endfor %}
       </tbody>
-    </table>
+    </table></div>
     <p class="mt-2 text-[12px] text-slate-300">
       The investigation produced the decision. The audit trail preserves it.
       <a href="/audit?verify=1" class="ml-1 font-medium text-emerald-300 underline">
@@ -500,11 +500,11 @@
     </p>
   </div>
 
-  <div class="mt-5 rounded border border-slate-800 bg-[#0b1220] p-5 text-center">
+  <div class="mt-5 rounded border border-slate-800 bg-[color:#0a1622] p-5 text-center">
     <p class="text-[12px] tracking-[0.2em] text-slate-500">
       DATA → INVESTIGATION → EVIDENCE → DECISION → AUDIT
     </p>
-    <p class="mt-2 text-[15px] font-semibold text-cyan-300">
+    <p class="mt-2 text-[15px] font-semibold text-[color:#7ea6ff]">
       Detect → Investigate → Explain → Act → Prove
     </p>
   </div>

@@ -18,7 +18,7 @@
 {% endif %}
 
 {% if not study.ctri_number and study.status in ('enrolling', 'screening', 'follow_up') %}
-<div class="mt-4 rounded border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-900">
+<div class="mt-4 rounded border border-[color:var(--breach-rule)] bg-[color:var(--breach-bg)] px-4 py-3 text-sm text-[color:var(--breach)]">
   <span class="font-medium">Enrolling without a CTRI registration number.</span>
   Prospective registration with the Clinical Trials Registry — India is mandatory before
   the first subject is enrolled. This study should not be recruiting.
@@ -48,7 +48,7 @@
   <div class="mt-3">{{ bar(k.enrolled, k.target, k.expected_by_today) }}</div>
   {% if k.next_milestone %}
     <p class="mt-3 text-xs text-slate-500">
-      Next milestone: <span class="font-medium text-slate-700">{{ k.next_milestone }}</span>
+      Next milestone: <span class="font-medium" style="color:var(--ink)">{{ k.next_milestone|label }}</span>
       in {{ k.days_to_next_milestone }} days.
     </p>
   {% endif %}
@@ -58,7 +58,7 @@
 
   <section class="panel">
     <div class="panel-head"><span class="panel-title">Sites <span class="text-slate-400">({{ sites|length }})</span></span></div>
-    <table class="tbl">
+    <div class="tbl-scroll"><table class="tbl">
       <tbody class="divide-y divide-slate-100">
         {% for s in sites %}
         <tr>
@@ -75,14 +75,14 @@
         </tr>
         {% endfor %}
       </tbody>
-    </table>
+    </table></div>
   </section>
 
   <section class="panel">
     <div class="panel-head"><span class="panel-title">Milestones</span></div>
     <ol class="divide-y divide-slate-100">
       {% for m in milestones %}
-      {% set tone = {'achieved':'bg-emerald-500','missed':'bg-red-500','at_risk':'bg-amber-500'}.get(m.status, 'bg-slate-300') %}
+      {% set tone = {'achieved':'bg-[color:var(--within)]','missed':'bg-[color:var(--breach)]','at_risk':'bg-amber-500'}.get(m.status, 'bg-slate-300') %}
       <li class="flex items-center gap-3 px-5 py-2.5 text-sm">
         <span class="h-2.5 w-2.5 shrink-0 rounded-full {{ tone }}"></span>
         <span class="flex-1 text-slate-700">{{ m.type|label }}</span>
@@ -96,7 +96,7 @@
 
   <section class="panel lg:col-span-2">
     <div class="panel-head"><span class="panel-title">Protocol deviations <span class="text-slate-400">({{ deviations|length }})</span></span><span class="text-xs text-slate-400">{{ k.deviation_rate_per_site }} per site</span></div>
-    <table class="tbl">
+    <div class="tbl-scroll"><table class="tbl">
       <thead class="border-b border-slate-100 text-left text-xs uppercase tracking-wide text-slate-500">
         <tr>
           <th class="px-5 py-2 font-medium">Detected</th>
@@ -128,12 +128,12 @@
         <tr><td colspan="5" class="px-5 py-4 text-sm text-slate-400">No deviations recorded.</td></tr>
         {% endfor %}
       </tbody>
-    </table>
+    </table></div>
   </section>
 
   <section class="panel lg:col-span-2">
     <div class="panel-head"><span class="panel-title">Open data queries <span class="text-slate-400">({{ queries|length }})</span></span></div>
-    <table class="tbl">
+    <div class="tbl-scroll"><table class="tbl">
       <tbody class="divide-y divide-slate-100">
         {% for q in queries %}
         <tr>
@@ -147,7 +147,7 @@
         <tr><td colspan="5" class="px-5 py-4 text-sm text-slate-400">No open queries.</td></tr>
         {% endfor %}
       </tbody>
-    </table>
+    </table></div>
   </section>
 
 </div>

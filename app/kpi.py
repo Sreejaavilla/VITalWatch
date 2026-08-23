@@ -35,6 +35,17 @@ OPEN_SAE_OUTCOMES = ("recovering", "not_recovered", "unknown")
 ENROLMENT_WINDOW_DAYS = 400
 
 
+def expected_enrolment(start_date: str, target: int, today: date | None = None) -> int:
+    """Where the straight-line plan says a study should be by `today`.
+
+    Public because three screens read it — the study page, the portfolio table and the
+    investigation's recruitment evidence — and three copies of a plan curve is three
+    chances for two screens to quote different numbers for the same study.
+    """
+    elapsed = ((today or _today()) - date.fromisoformat(start_date)).days
+    return int(target * min(max(elapsed / ENROLMENT_WINDOW_DAYS, 0.0), 1.0))
+
+
 def _today() -> date:
     """The demo's 'today'.
 
@@ -144,9 +155,7 @@ def study_kpi(conn: Connection, study_id: str) -> StudyKPI | None:
     # Where the plan says enrolment should be by now — a straight line from study start
     # across the enrolment window. Crude, and honest about being crude: the gap between
     # this and `enrolled` is what drives the enrolment-lag alert.
-    elapsed = (today - date.fromisoformat(study["start_date"])).days
-    progress = min(max(elapsed / ENROLMENT_WINDOW_DAYS, 0.0), 1.0)
-    expected = int(target * progress)
+    expected = expected_enrolment(study["start_date"], target, today)
 
     screened = _scalar(conn, "SELECT COUNT(*) FROM subjects WHERE study_id = ?", (study_id,))
     failed = _scalar(
@@ -200,5 +209,6 @@ def study_kpi(conn: Connection, study_id: str) -> StudyKPI | None:
         deviation_rate_per_site=0.0 if site_count == 0 else round(deviations / site_count, 1),
         open_saes=_open_saes(conn, study_id),
         days_to_next_milestone=(date.fromisoformat(nxt["planned_date"]) - today).days if nxt else None,
-        next_milestone=nxt["type"].replace("_", " ").capitalize() if nxt else None,
+        # Raw enum value; the `label` filter spells it the way the domain does.
+        next_milestone=nxt["type"] if nxt else None,
     )

@@ -9,7 +9,7 @@
 {% endcall %}
 
 {% if filed_event %}
-<div class="mt-4 rounded border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
+<div class="mt-4 rounded border border-[color:var(--within-rule)] bg-[color:var(--within-bg)] p-4 text-sm text-[color:var(--within)]">
   <div class="font-medium">Event filed and written to the audit trail.</div>
 
   <dl class="mt-3 grid gap-x-8 gap-y-2 sm:grid-cols-3">
@@ -71,37 +71,37 @@
   <form method="post" action="/ae" class="mt-4 grid gap-4 md:grid-cols-3">
 
     <label class="block text-sm">
-      <span class="text-slate-600">Study</span>
+      <span class="label">Study</span>
       <select name="study_id" required
-              class="mt-1 w-full rounded border border-slate-300 px-2.5 py-1.5 text-[13px] focus:border-teal-700 focus:outline-none focus:ring-1 focus:ring-teal-700">
+              class="field mt-1">
         {% for s in studies %}<option value="{{ s.id }}">{{ s.id }} — {{ s.title }}</option>{% endfor %}
       </select>
     </label>
 
     <label class="block text-sm">
-      <span class="text-slate-600">Subject code</span>
+      <span class="label">Subject code</span>
       <input name="subject_code" required placeholder="AIIA-001-004"
-             class="mt-1 w-full rounded border border-slate-300 px-2.5 py-1.5 text-[13px] focus:border-teal-700 focus:outline-none focus:ring-1 focus:ring-teal-700">
+             class="field mt-1">
       {# Pseudonymous code only. There is no name field to type into. #}
       <span class="mt-1 block text-xs text-slate-400">Pseudonymous code only — no participant name.</span>
     </label>
 
     <label class="block text-sm">
-      <span class="text-slate-600">Onset date</span>
+      <span class="label">Onset date</span>
       <input name="onset_date" type="date" required
-             class="mt-1 w-full rounded border border-slate-300 px-2.5 py-1.5 text-[13px] focus:border-teal-700 focus:outline-none focus:ring-1 focus:ring-teal-700">
+             class="field mt-1">
     </label>
 
     <label class="block text-sm md:col-span-3">
-      <span class="text-slate-600">Narrative as reported</span>
+      <span class="label">Narrative as reported</span>
       <textarea name="narrative" required rows="2"
                 placeholder="severe abdominal pain, subject hospitalised for observation"
-                class="mt-1 w-full rounded border border-slate-300 px-2.5 py-1.5 text-[13px] focus:border-teal-700 focus:outline-none focus:ring-1 focus:ring-teal-700"></textarea>
+                class="field mt-1"></textarea>
     </label>
 
     <label class="block text-sm">
-      <span class="text-slate-600">Severity</span>
-      <select name="severity" class="mt-1 w-full rounded border border-slate-300 px-2.5 py-1.5 text-[13px] focus:border-teal-700 focus:outline-none focus:ring-1 focus:ring-teal-700">
+      <span class="label">Severity</span>
+      <select name="severity" class="field mt-1">
         <option value="mild">Mild</option>
         <option value="moderate">Moderate</option>
         <option value="severe">Severe</option>
@@ -109,8 +109,8 @@
     </label>
 
     <label class="block text-sm">
-      <span class="text-slate-600">Causality (WHO-UMC)</span>
-      <select name="causality" class="mt-1 w-full rounded border border-slate-300 px-2.5 py-1.5 text-[13px] focus:border-teal-700 focus:outline-none focus:ring-1 focus:ring-teal-700">
+      <span class="label">Causality (WHO-UMC)</span>
+      <select name="causality" class="field mt-1">
         <option value="unrelated">Unrelated</option>
         <option value="unlikely">Unlikely</option>
         <option value="possible" selected>Possible</option>
@@ -120,8 +120,8 @@
     </label>
 
     <label class="block text-sm">
-      <span class="text-slate-600">Outcome</span>
-      <select name="outcome" class="mt-1 w-full rounded border border-slate-300 px-2.5 py-1.5 text-[13px] focus:border-teal-700 focus:outline-none focus:ring-1 focus:ring-teal-700">
+      <span class="label">Outcome</span>
+      <select name="outcome" class="field mt-1">
         <option value="recovering" selected>Recovering</option>
         <option value="recovered">Recovered</option>
         <option value="not_recovered">Not recovered</option>
@@ -142,7 +142,7 @@
 </section>
 
 <div class="mt-8 panel overflow-hidden">
-  <table class="tbl">
+  <div class="tbl-scroll"><table class="tbl">
     <thead>
       <tr>
         <th>Reported</th>
@@ -157,11 +157,11 @@
     <tbody class="divide-y divide-slate-100">
       {% for e in events %}
       {% set left = clocks.get(e.id) %}
-      <tr class="{{ 'bg-red-50/50' if e.timeline_status == 'breached' else '' }}">
+      <tr class="{{ 'bg-[color:var(--breach-bg)]' if e.timeline_status == 'breached' else '' }}">
         <td class="text-xs tabular-nums text-slate-500">{{ e.reported_at | dt }}</td>
         <td>
           <div class="text-slate-700">{{ e.subject_code }}</div>
-          <a href="/study/{{ e.study_id }}" class="text-xs text-slate-400 hover:text-sky-700">{{ e.study_id }}</a>
+          <a href="/study/{{ e.study_id }}" class="text-xs text-slate-400 hover:text-[color:var(--reference)]">{{ e.study_id }}</a>
         </td>
         <td class="text-slate-600">
           {{ e.narrative }}
@@ -193,7 +193,7 @@
       </tr>
       {% endfor %}
     </tbody>
-  </table>
+  </table></div>
 </div>
 
 {% call note('About coding and the MedDRA position') %}

@@ -20,7 +20,7 @@
 </div>
 
 <div class="mt-8 panel overflow-hidden">
-  <table class="tbl">
+  <div class="tbl-scroll"><table class="tbl">
     <thead>
       <tr>
         <th>Study</th>
@@ -34,9 +34,9 @@
     </thead>
     <tbody class="divide-y divide-slate-100">
       {% for s in signals %}
-      <tr class="align-top {{ 'bg-red-50/60' if s.flagged else '' }}">
+      <tr class="align-top {{ 'bg-[color:var(--breach-bg)]/60' if s.flagged else '' }}">
         <td>
-          <a href="/study/{{ s.study_id }}" class="font-medium text-slate-700 hover:text-sky-700">{{ s.study_id }}</a>
+          <a href="/study/{{ s.study_id }}" class="font-medium text-slate-700 hover:text-[color:var(--reference)]">{{ s.study_id }}</a>
           <div class="max-w-xs truncate text-xs text-slate-400">{{ s.study_title }}</div>
         </td>
         <td>
@@ -44,7 +44,7 @@
           <div class="font-mono text-xs text-slate-400">{{ s.coded_code }}</div>
         </td>
         <td class="text-right tabular-nums">
-          <span class="{{ 'text-lg font-semibold text-red-700' if s.flagged else 'text-slate-700' }}">{{ s.cases }}</span>
+          <span class="{{ 'text-lg font-semibold text-[color:var(--breach)]' if s.flagged else 'text-slate-700' }}">{{ s.cases }}</span>
           {% if s.serious %}<div class="text-xs text-red-600">{{ s.serious }} serious</div>{% endif %}
         </td>
         <td class="text-right text-xs tabular-nums text-slate-600">
@@ -59,7 +59,7 @@
           {% if s.prr is none %}
             <span class="text-xs text-slate-500">not seen<br>elsewhere</span>
           {% else %}
-            <span class="{{ 'font-semibold text-red-700' if s.flagged else 'text-slate-700' }}">{{ '%.2f'|format(s.prr) }}×</span>
+            <span class="{{ 'font-semibold text-[color:var(--breach)]' if s.flagged else 'text-slate-700' }}">{{ '%.2f'|format(s.prr) }}×</span>
           {% endif %}
         </td>
         <td>
@@ -93,7 +93,7 @@
       </td></tr>
       {% endif %}
     </tbody>
-  </table>
+  </table></div>
 </div>
 
 {% call note('Method: proportional reporting ratio, and what it does not claim') %}

@@ -8,64 +8,82 @@
 
 {# Shared display pieces. Kept here so a badge means the same thing on every screen —
    an inconsistent severity colour is the kind of thing a judge notices and a demo
-   cannot explain away. #}
+   cannot explain away.
+
+   Three states, and only three, because the domain already defines them: breached,
+   needs review, within tolerance. `neutral` is for facts that are not states at all.
+   Nothing here may introduce a fourth colour. #}
+
+{% set TONES = {
+  'neutral': 'neutral', 'good': 'within', 'warn': 'review', 'bad': 'breach',
+  'info': 'neutral', 'ref': 'ref'
+} %}
+
+{# An identifier — a study id, subject code, CTRI number, controlled term, hash.
+   In a schema with no patient names these codes are the record, so they are typeset
+   as objects rather than left as incidental text. #}
+{% macro code(value) %}<span class="code">{{ value }}</span>{% endmacro %}
 
 {% macro tile(label, value, sub=None, tone='neutral') %}
-  {% set tones = {
-    'neutral': 'border-slate-200',
-    'good':    'border-emerald-300',
-    'warn':    'border-amber-300',
-    'bad':     'border-red-300'
-  } %}
-  <div class="rounded border bg-white p-4 {{ tones[tone] }}">
-    <div class="text-xs uppercase tracking-wide text-slate-500">{{ label }}</div>
-    <div class="mt-1 text-3xl font-semibold tabular-nums text-slate-900">{{ value }}</div>
-    {% if sub %}<div class="mt-0.5 text-xs text-slate-500">{{ sub }}</div>{% endif %}
+  {% set skin = {'neutral': '', 'good': 'metric-within', 'warn': 'metric-review', 'bad': 'metric-breach'} %}
+  <div class="metric {{ skin[tone] }}">
+    <div class="label">{{ label }}</div>
+    <div class="metric-value mt-1">{{ value }}</div>
+    {% if sub %}<div class="metric-sub">{{ sub }}</div>{% endif %}
   </div>
 {% endmacro %}
 
 {% macro badge(text, tone='neutral') %}
-  {% set tones = {
-    'neutral': 'bg-slate-100 text-slate-700',
-    'good':    'bg-emerald-100 text-emerald-800',
-    'warn':    'bg-amber-100 text-amber-800',
-    'bad':     'bg-red-100 text-red-800',
-    'info':    'bg-sky-100 text-sky-800'
-  } %}
-  <span class="inline-block rounded px-2 py-0.5 text-xs font-medium {{ tones[tone] }}">{{ text }}</span>
+  <span class="pill pill-{{ TONES.get(tone, 'neutral') }}">{{ text }}</span>
 {% endmacro %}
 
 {% macro severity_badge(severity) %}
   {{ badge(severity|capitalize, {'critical':'bad','severe':'bad','major':'warn','moderate':'warn'}.get(severity, 'neutral')) }}
 {% endmacro %}
 
-{% macro bar(actual, target, expected=None) %}
+{# ---------------------------------------------------------------------------
+   The reference mark — this system's signature.
+
+   No value in clinical oversight means anything on its own; it means something
+   against the line it is judged by. This mark shows the value on its track and puts
+   a single indigo tick at that line — plan-to-date here, a screening threshold on
+   the signals page, a statutory deadline on the clocks. Indigo is reserved for the
+   line and is used for nothing else anywhere in the interface, so the mark reads
+   the same way on every screen without a legend.
+
+   `expected` is the reference. Omit it and you get a plain progress track, which is
+   the honest rendering when there is no standard to compare against. #}
+{% macro ref(actual, target, expected=None, low_at=0.85) %}
   {% set pct = 0 if not target else (100 * actual / target)|round(1) %}
-  <div class="relative h-2 w-full rounded-full bg-slate-200">
-    <div class="h-2 rounded-full {{ 'bg-red-500' if expected is not none and actual < expected * 0.85 else 'bg-emerald-500' }}"
+  {% set behind = expected is not none and expected > 0 and actual < expected * low_at %}
+  <div class="ref">
+    <div class="ref-fill {{ 'ref-fill-breach' if behind else 'ref-fill-within' }}"
          style="width: {{ [pct, 100]|min }}%"></div>
     {% if expected is not none and target %}
-      {# The plan marker. The gap between the fill and this tick is the enrolment lag. #}
-      <div class="absolute top-[-2px] h-3 w-0.5 bg-slate-700"
-           style="left: {{ [(100 * expected / target)|round(1), 100]|min }}%"
-           title="Plan to date: {{ expected }}"></div>
+      <div class="ref-mark" style="left: {{ [(100 * expected / target)|round(1), 100]|min }}%"
+           title="Reference — plan to date: {{ expected }}"></div>
     {% endif %}
   </div>
 {% endmacro %}
+
+{# Kept under its old name so existing call sites keep working. #}
+{% macro bar(actual, target, expected=None) %}{{ ref(actual, target, expected) }}{% endmacro %}
 
 
 {# The page header. Every screen uses this, so the title, the subtitle and the actions
    land in the same place on all of them — the thing you notice only when it is absent.
    Invoke with {% call page_head(...) %}<buttons>{% endcall %}; actions are optional. #}
 {% macro page_head(title, subtitle=None, back=None, back_label=None) %}
-  <div class="mb-5 border-b border-slate-200 pb-4">
+  <div class="mb-5 border-b pb-4" style="border-color: var(--rule)">
     {% if back %}
-      <a href="{{ back }}" class="text-xs text-slate-500 hover:text-slate-800">← {{ back_label or 'Back' }}</a>
+      <a href="{{ back }}" class="label hover:underline">← {{ back_label or 'Back' }}</a>
     {% endif %}
-    <div class="{{ 'mt-1' if back else '' }} flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
+    <div class="{{ 'mt-1.5' if back else '' }} flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
       <div class="min-w-0">
-        <h1 class="text-[19px] font-semibold leading-tight tracking-tight text-slate-900">{{ title }}</h1>
-        {% if subtitle %}<p class="mt-1 max-w-3xl text-[13px] leading-relaxed text-slate-500">{{ subtitle }}</p>{% endif %}
+        <h1 class="text-[19px] font-semibold leading-tight" style="color: var(--ink)">{{ title }}</h1>
+        {% if subtitle %}
+          <p class="mt-1 max-w-3xl text-[13px] leading-relaxed" style="color: var(--muted)">{{ subtitle }}</p>
+        {% endif %}
       </div>
       {% if caller is defined %}
         <div class="flex shrink-0 items-center gap-2">{{ caller() }}</div>

@@ -10,8 +10,8 @@
 {% endcall %}
 
 <div class="rounded border p-3 text-[13px]
-            {% if chain.ok %}border-emerald-200 bg-emerald-50 text-emerald-900
-            {% else %}border-red-200 bg-red-50 text-red-900{% endif %}">
+            {% if chain.ok %}border-[color:var(--within-rule)] bg-[color:var(--within-bg)] text-[color:var(--within)]
+            {% else %}border-[color:var(--breach-rule)] bg-[color:var(--breach-bg)] text-[color:var(--breach)]{% endif %}">
   {% if chain.ok %}
     <span class="font-medium">Chain intact.</span>
     {{ chain.count }} event{{ '' if chain.count == 1 else 's' }} verified from genesis.
@@ -33,8 +33,8 @@
 <form method="get" action="/audit"
       class="mt-6 flex flex-wrap items-end gap-3 panel p-4">
   <label class="block text-sm">
-    <span class="text-xs text-slate-500">Actor</span>
-    <select name="actor" class="mt-1 rounded border border-slate-300 px-2.5 py-1.5 text-[13px] focus:border-teal-700 focus:outline-none focus:ring-1 focus:ring-teal-700">
+    <span class="label">Actor</span>
+    <select name="actor" class="field mt-1">
       <option value="">Anyone</option>
       {% for a in actors %}
         <option value="{{ a }}" {{ 'selected' if a == actor else '' }}>{{ a }}</option>
@@ -42,21 +42,21 @@
     </select>
   </label>
   <label class="block text-sm">
-    <span class="text-xs text-slate-500">From</span>
+    <span class="label">From</span>
     <input type="date" name="date_from" value="{{ date_from or '' }}"
-           class="mt-1 rounded border border-slate-300 px-2.5 py-1.5 text-[13px] focus:border-teal-700 focus:outline-none focus:ring-1 focus:ring-teal-700">
+           class="field mt-1">
   </label>
   <label class="block text-sm">
-    <span class="text-xs text-slate-500">To</span>
+    <span class="label">To</span>
     <input type="date" name="date_to" value="{{ date_to or '' }}"
-           class="mt-1 rounded border border-slate-300 px-2.5 py-1.5 text-[13px] focus:border-teal-700 focus:outline-none focus:ring-1 focus:ring-teal-700">
+           class="field mt-1">
   </label>
   <button type="submit" class="btn btn-secondary">Filter</button>
   {% if filtered %}
-    <a href="/audit" class="py-1.5 text-sm text-sky-700 hover:underline">clear</a>
+    <a href="/audit" class="py-1.5 text-sm text-[color:var(--reference)] hover:underline">clear</a>
   {% endif %}
   {% if filter_error %}
-    <span class="w-full text-xs text-amber-700">{{ filter_error }}</span>
+    <span class="w-full text-xs text-[color:var(--review)]">{{ filter_error }}</span>
   {% endif %}
   <span class="ml-auto text-xs text-slate-400">Filters the view only — verification always walks the full chain.</span>
 </form>
@@ -74,7 +74,7 @@
       <span class="text-xs text-slate-400">showing the {{ events|length }} most recent</span>
     {% endif %}
   </div>
-  <table class="tbl">
+  <div class="tbl-scroll"><table class="tbl">
     <thead>
       <tr>
         <th class="num">Seq</th>
@@ -102,7 +102,7 @@
         <td>
           {% if e.before_json or e.after_json %}
           <details>
-            <summary class="cursor-pointer text-xs text-sky-700 hover:underline">
+            <summary class="cursor-pointer text-xs text-[color:var(--reference)] hover:underline">
               {% if e.before_json and e.after_json %}changed
               {% elif e.after_json %}created
               {% else %}removed{% endif %}
@@ -142,7 +142,7 @@
       </td></tr>
       {% endif %}
     </tbody>
-  </table>
+  </table></div>
 </div>
 
 {% call note('How immutability is enforced') %}

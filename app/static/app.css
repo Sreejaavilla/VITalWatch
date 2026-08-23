@@ -1,56 +1,208 @@
-/* Component classes for anything used on more than one screen.
-   Utilities inline are fine for one-offs; a button repeated on five pages is not a
-   one-off, and five slightly different buttons is what makes an interface feel unbuilt. */
+/* VITalWatch — visual system.
+   ---------------------------------------------------------------------------
+   The premise this design is built on: in clinical oversight no value means
+   anything on its own. Enrolment is read against the plan to date, a reporting
+   clock against a statutory deadline, a proportional reporting ratio against a
+   screening threshold. The number is never the finding — the distance from the
+   line is.
+
+   So one colour is reserved, everywhere and exclusively, for *the line you are
+   measured against*: --reference. It is never decorative and never a state. When
+   you see indigo on this system it means "this is the standard". That gives the
+   product a signature mark (.ref, below) which carries the same meaning on every
+   screen, and it keeps the brand colour out of the way of the three colours that
+   are already spoken for by the domain: breach, review, within tolerance.
+
+   Everything else stays quiet. Hairlines rather than shadows, because the
+   artefacts of this world — case report forms, lab reports, protocol documents —
+   are ruled, not raised. Identifiers and figures are set in mono because in a
+   system with no patient names, the code *is* the record. */
 
 :root {
-  --line: #e2e8f0;
-  --line-strong: #cbd5e1;
-  --ink: #0f172a;
-  --muted: #64748b;
-  --accent: #0d5c63;
-  --accent-ink: #ffffff;
+  /* Surfaces. Barely off-white: document stock, not paper-cream. */
+  --paper:        #fbfbfa;
+  --surface:      #ffffff;
+  --surface-sunk: #f6f7f8;
+
+  /* Ink. Blue-black, the colour of a printed form. */
+  --ink:          #0f1a26;
+  --ink-2:        #3c4a5a;
+  --muted:        #6b7a8c;
+  --faint:        #94a1b0;
+
+  --rule:         #dfe3e8;
+  --rule-strong:  #c3cbd4;
+
+  /* Institution. Masthead and rail. Never used to encode a data state. */
+  --institution:  #143a58;
+  --institution-2:#0d2739;
+
+  /* The reference line. Reserved. See the note above. */
+  --reference:    #3538cd;
+  --reference-2:  #eceafb;
+
+  /* States. Print-muted rather than screen-bright: a regulatory instrument that
+     glows like a game console is not one anybody trusts. */
+  --breach:       #b42318;
+  --breach-bg:    #fef3f2;
+  --breach-rule:  #f3c5c0;
+  --review:       #b54708;
+  --review-bg:    #fffaeb;
+  --review-rule:  #f2ceac;
+  --within:       #067647;
+  --within-bg:    #f0fdf5;
+  --within-rule:  #b6e3ca;
+
+  --radius:       3px;
 }
 
 html { -webkit-text-size-adjust: 100%; }
-body { font-feature-settings: "cv05", "ss01"; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-feature-settings: "cv05", "ss01";
+}
 
-.tabular-nums { font-variant-numeric: tabular-nums; }
+/* Figures line up in columns across every card and row. */
+.tabular-nums,
+.metric-value,
+.tbl .num,
+.code { font-variant-numeric: tabular-nums; }
+
+/* --- identifiers -------------------------------------------------------------
+   The typographic signature. Every study id, subject code, protocol number, CTRI
+   number, controlled term and hash is set this way, so a coded identifier is
+   recognisable as one before it is read. */
+.code {
+  font-family: "IBM Plex Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: .9em;
+  letter-spacing: -.01em;
+  /* A 64-character hash offers no break opportunity, so without this it sets the
+     minimum width of every box it sits in, and the page inherits that width. */
+  overflow-wrap: anywhere;
+}
+
+/* --- section labels: case-report-form vernacular --- */
+.label {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: .625rem; font-weight: 500;
+  letter-spacing: .09em; text-transform: uppercase;
+  color: var(--muted);
+}
 
 /* --- buttons: one primary, one secondary, one quiet. No fourth kind. --- */
 .btn {
   display: inline-flex; align-items: center; gap: .375rem;
-  border-radius: 4px; padding: .4rem .75rem;
+  border-radius: var(--radius); padding: .4rem .75rem;
   font-size: .8125rem; font-weight: 500; line-height: 1.25rem;
   white-space: nowrap; cursor: pointer;
   transition: background-color .12s ease, border-color .12s ease, color .12s ease;
 }
-.btn-primary { background: var(--accent); color: var(--accent-ink); border: 1px solid var(--accent); }
-.btn-primary:hover { background: #0a4a50; border-color: #0a4a50; }
-.btn-secondary { background: #fff; color: #334155; border: 1px solid var(--line-strong); }
-.btn-secondary:hover { background: #f8fafc; border-color: #94a3b8; }
+.btn-primary { background: var(--institution); color: #fff; border: 1px solid var(--institution); }
+.btn-primary:hover { background: var(--institution-2); border-color: var(--institution-2); }
+.btn-secondary { background: var(--surface); color: var(--ink-2); border: 1px solid var(--rule-strong); }
+.btn-secondary:hover { background: var(--surface-sunk); border-color: var(--muted); }
 .btn-quiet { color: var(--muted); border: 1px solid transparent; padding: .4rem .5rem; }
-.btn-quiet:hover { color: #334155; background: #f1f5f9; }
+.btn-quiet:hover { color: var(--ink); background: var(--surface-sunk); }
 
-/* --- panels: the standard surface. Square-ish, hairline, no shadow. --- */
-.panel { background: #fff; border: 1px solid var(--line); border-radius: 4px; }
-.panel-head {
-  display: flex; align-items: baseline; justify-content: space-between; gap: 1rem;
-  padding: .625rem .875rem; border-bottom: 1px solid var(--line);
+/* Keyboard focus is visible on everything, and it is the reference colour so it
+   never reads as a state. */
+:focus-visible {
+  outline: 2px solid var(--reference);
+  outline-offset: 2px;
+  border-radius: 2px;
 }
-.panel-title { font-size: .8125rem; font-weight: 600; color: #334155; }
+
+/* --- form fields --- */
+.field {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--radius);
+  padding: .375rem .625rem;
+  font-size: .8125rem;
+  color: var(--ink);
+}
+.field:focus { border-color: var(--reference); outline: none; box-shadow: 0 0 0 3px var(--reference-2); }
+.field-label { display: block; }
+.field-label > .label { display: block; margin-bottom: .25rem; }
+
+/* --- panels: the standard surface. Ruled, not raised. --- */
+.panel { background: var(--surface); border: 1px solid var(--rule); border-radius: var(--radius); }
+.panel-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  flex-wrap: wrap; gap: .25rem 1rem;
+  padding: .625rem .875rem; border-bottom: 1px solid var(--rule);
+  background: var(--surface-sunk);
+}
+/* Flex items refuse to shrink below their content by default; without this a long
+   caption sets the width of the page it sits on. */
+.panel-head > * { min-width: 0; }
+.panel-title { font-size: .8125rem; font-weight: 600; color: var(--ink); }
+
+/* --- metrics ---------------------------------------------------------------
+   Figures in mono at 500. This is the one deliberate risk in the system: most
+   dashboards set the big number in the display face. Setting it in mono makes
+   every figure align across cards, and says the number was measured rather than
+   chosen. */
+.metric { border: 1px solid var(--rule); border-radius: var(--radius); background: var(--surface); padding: .875rem 1rem; }
+.metric-value {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: 1.75rem; font-weight: 500; line-height: 1.1;
+  letter-spacing: -.03em; color: var(--ink);
+}
+.metric-sub { margin-top: .3rem; font-size: .6875rem; line-height: 1.5; color: var(--muted); }
+.metric-breach { border-color: var(--breach-rule); }
+.metric-review { border-color: var(--review-rule); }
+.metric-within { border-color: var(--within-rule); }
+
+/* --- the reference mark ------------------------------------------------------
+   The signature. A value on its track, with one indigo tick at the line that
+   makes the value mean something: plan-to-date, a screening threshold, a
+   statutory deadline. Same mark, same colour, same meaning on every screen. */
+.ref { position: relative; height: 6px; background: var(--surface-sunk); border-radius: 999px; overflow: visible; }
+.ref-fill { height: 6px; border-radius: 999px; background: var(--ink-2); }
+.ref-fill-breach { background: var(--breach); }
+.ref-fill-review { background: var(--review); }
+.ref-fill-within { background: var(--within); }
+.ref-mark {
+  position: absolute; top: -3px; width: 2px; height: 12px;
+  background: var(--reference); border-radius: 1px;
+}
+.ref-mark::after {
+  content: ""; position: absolute; left: 50%; top: -3px;
+  width: 4px; height: 4px; margin-left: -2px; border-radius: 999px;
+  background: var(--reference);
+}
+.ref-legend { margin-top: .3rem; display: flex; justify-content: space-between; font-size: .625rem; color: var(--faint); }
+.ref-legend .at { color: var(--reference); font-weight: 500; }
+
+/* --- status pills: the three states the domain already defines --- */
+.pill {
+  display: inline-flex; align-items: center; gap: .3rem;
+  border-radius: 2px; padding: .05rem .35rem;
+  font-size: .6875rem; font-weight: 500; line-height: 1.4;
+  border: 1px solid transparent;
+}
+.pill-breach  { background: var(--breach-bg); color: var(--breach); border-color: var(--breach-rule); }
+.pill-review  { background: var(--review-bg); color: var(--review); border-color: var(--review-rule); }
+.pill-within  { background: var(--within-bg); color: var(--within); border-color: var(--within-rule); }
+.pill-neutral { background: var(--surface-sunk); color: var(--ink-2); border-color: var(--rule); }
+.pill-ref     { background: var(--reference-2); color: var(--reference); border-color: #cfcbf5; }
 
 /* --- tables: dense. Clinical data is read in bulk, not admired. --- */
 .tbl { width: 100%; font-size: .8125rem; border-collapse: collapse; }
 .tbl thead th {
   position: sticky; top: 0; z-index: 1;
   padding: .5rem .875rem; text-align: left;
-  font-size: .6875rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
-  color: var(--muted); background: #f8fafc; border-bottom: 1px solid var(--line);
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: .625rem; font-weight: 500; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--muted); background: var(--surface-sunk); border-bottom: 1px solid var(--rule);
 }
-.tbl tbody td { padding: .5rem .875rem; border-bottom: 1px solid #f1f5f9; vertical-align: top; }
+.tbl tbody td { padding: .5rem .875rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
 .tbl tbody tr:last-child td { border-bottom: 0; }
-.tbl tbody tr:hover { background: #f8fafc; }
-.tbl .num { text-align: right; font-variant-numeric: tabular-nums; }
+.tbl tbody tr:hover { background: var(--surface-sunk); }
+.tbl .num { text-align: right; }
 
 /* --- the disclosure that replaced five essays --- */
 .note > summary {
@@ -60,133 +212,215 @@ body { font-feature-settings: "cv05", "ss01"; }
 .note > summary::-webkit-details-marker { display: none; }
 .note > summary::before { content: "＋ "; font-size: .7rem; }
 .note[open] > summary::before { content: "－ "; }
-.note > summary:hover { color: #334155; }
+.note > summary:hover { color: var(--ink); }
 .note-body {
-  margin-top: .375rem; max-width: 62ch;
-  font-size: .75rem; line-height: 1.6; color: var(--muted);
+  margin-top: .375rem; max-width: 64ch;
+  font-size: .75rem; line-height: 1.65; color: var(--muted);
 }
 .note-body p + p { margin-top: .5rem; }
 
-/* --- top-bar tabs: underline, not pills. Pills read as a toy. --- */
+/* --- tabs --- */
 .tab {
   padding: .5rem .125rem; margin-bottom: -1px;
-  font-size: .8125rem; color: #94a3b8;
+  font-size: .8125rem; color: var(--faint);
   border-bottom: 2px solid transparent;
 }
-.tab:hover { color: #e2e8f0; }
-.tab-on { color: #fff; border-bottom-color: #5eead4; }
+.tab:hover { color: var(--ink-2); }
+.tab-on { color: var(--ink); border-bottom-color: var(--reference); }
 
-/* --- left rail --- */
+/* --- left rail: the masthead ------------------------------------------------
+   Institution navy rather than neutral slate. This is a named national centre,
+   and the rail is the one place the institution gets to speak. */
 .sidebar {
   display: flex; flex-direction: column;
   width: 15rem; flex-shrink: 0;
-  background: #0f172a; border-right: 1px solid #1e293b;
+  background: var(--institution);
+  border-right: 1px solid var(--institution-2);
 }
 .nav-section {
-  padding: .875rem .625rem .3rem;
-  font-size: .625rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
-  color: #475569;
+  padding: .875rem .75rem .3rem;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: .5625rem; font-weight: 500; letter-spacing: .11em; text-transform: uppercase;
+  color: #6f93ad;
 }
 .nav-link {
   display: flex; align-items: center; justify-content: space-between; gap: .5rem;
-  border-radius: 4px; padding: .4rem .625rem; margin-bottom: 1px;
-  font-size: .8125rem; color: #cbd5e1;
+  border-radius: var(--radius); padding: .4rem .75rem; margin-bottom: 1px;
+  font-size: .8125rem; color: #cfe0ec;
   border-left: 2px solid transparent;
+  transition: background-color .12s ease, color .12s ease;
 }
-.nav-link:hover { background: #1e293b; color: #fff; }
-.nav-on { background: #1e293b; color: #fff; border-left-color: #2dd4bf; font-weight: 500; }
+.nav-link:hover { background: rgba(255,255,255,.07); color: #fff; }
+.nav-on { background: rgba(255,255,255,.11); color: #fff; border-left-color: #7ea6ff; font-weight: 500; }
 .nav-badge {
   min-width: 1.25rem; text-align: center;
-  border-radius: 999px; padding: 0 .375rem;
-  font-size: .6875rem; font-variant-numeric: tabular-nums;
-  background: #7f1d1d; color: #fecaca;
+  border-radius: 2px; padding: 0 .35rem;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: .625rem; font-variant-numeric: tabular-nums;
+  background: #7c2820; color: #ffd9d4;
 }
 
 /* --- investigation room -------------------------------------------------------
-   The investigation is the one screen that changes ground colour, and that is the
-   point: stepping into it should feel like stepping into a different room, so the
-   panel knows a mode changed without being told. Navy and cyan, evidence on white
-   cards, red reserved for an actual safety finding and amber for "a human should
-   look". No forensic kitsch — the metaphor is in how the screen behaves. */
+   The one screen that changes ground colour, and that is the point: stepping
+   into it should feel like stepping into a different room, so the reader knows a
+   mode changed without being told. Same reserved semantics — red is an actual
+   safety finding, amber is "a human should look", indigo is still the line. */
 .inv {
-  background: #0b1220;
-  color: #cbd5e1;
-  margin: -1.5rem -2rem;      /* bleed past main's padding, edge to edge */
+  background: #0a1622;
+  color: #b9c6d3;
+  margin: -1.5rem -2rem;
   padding: 1.5rem 2rem 2.5rem;
   min-height: calc(100vh - 3rem);
 }
-.inv h1, .inv h2, .inv h3 { color: #f1f5f9; }
-.inv-rule { border: 0; border-top: 1px solid #1e293b; margin: 1.75rem 0; }
+.inv h1, .inv h2, .inv h3 { color: #eef3f7; }
+.inv-rule { border: 0; border-top: 1px solid #1b2c3d; margin: 1.75rem 0; }
 .inv-eyebrow {
-  font-size: .6875rem; letter-spacing: .14em; text-transform: uppercase;
-  color: #22d3ee; font-weight: 600;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: .625rem; letter-spacing: .13em; text-transform: uppercase;
+  color: #7ea6ff; font-weight: 500;
 }
 
-/* An evidence card. Collapsed it is a filing-cabinet tab; open it is a document. */
 .ev {
-  background: #111c2f; border: 1px solid #1e293b; border-radius: .375rem;
+  background: #0f1e2e; border: 1px solid #1b2c3d; border-radius: var(--radius);
   overflow: hidden; transition: border-color .15s;
 }
-.ev[open] { border-color: #22d3ee; }
+.ev[open] { border-color: #33526f; }
 .ev > summary {
-  cursor: pointer; list-style: none; padding: .875rem 1rem;
+  cursor: pointer; list-style: none; padding: .8rem 1rem;
   display: flex; align-items: center; gap: .75rem;
 }
 .ev > summary::-webkit-details-marker { display: none; }
-.ev > summary:hover { background: #16233c; }
+.ev > summary:hover { background: #142737; }
 .ev-num {
-  font-size: .625rem; letter-spacing: .1em; color: #64748b;
-  font-variant-numeric: tabular-nums;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: .5625rem; letter-spacing: .11em; color: #607d95;
 }
-.ev-title { color: #e2e8f0; font-size: .875rem; font-weight: 500; }
-.ev-open { margin-left: auto; font-size: .6875rem; color: #22d3ee; }
+.ev-title { color: #dce6ee; font-size: .875rem; font-weight: 500; }
+.ev-open { margin-left: auto; font-size: .6875rem; color: #7ea6ff; }
 .ev[open] .ev-open::after { content: "close"; }
 .ev:not([open]) .ev-open::after { content: "open"; }
-.ev-body { padding: 0 1rem 1.125rem; font-size: .8125rem; line-height: 1.6; }
+.ev-body { padding: 0 1rem 1.125rem; font-size: .8125rem; line-height: 1.65; }
 
-/* Documents sit on white inside the dark room, because a document is a document. */
+/* Documents sit on paper inside the dark room, because a document is a document. */
 .doc {
-  background: #f8fafc; color: #1e293b; border-radius: .25rem;
-  padding: .875rem 1rem; font-size: .8125rem; line-height: 1.6;
+  background: var(--paper); color: var(--ink-2); border-radius: var(--radius);
+  padding: .875rem 1rem; font-size: .8125rem; line-height: 1.65;
 }
-.doc-src { font-size: .6875rem; color: #64748b; }
+.doc-src { font-size: .625rem; color: var(--muted); }
 
-/* Patient cards, and the moment they stop being three separate things. */
 .pt {
-  background: #f8fafc; color: #0f172a; border-radius: .25rem; padding: .75rem .875rem;
-  border-left: 3px solid #94a3b8;
+  background: var(--paper); color: var(--ink); border-radius: var(--radius);
+  padding: .75rem .875rem; border-left: 3px solid var(--rule-strong);
 }
-.pt-linked { border-left-color: #ef4444; }
-.inv-cluster[open] .pt { animation: draw-together .5s ease-out both; }
-.inv-cluster[open] .pt:nth-child(2) { animation-delay: .1s; }
-.inv-cluster[open] .pt:nth-child(3) { animation-delay: .2s; }
+.pt-linked { border-left-color: var(--breach); }
+.inv-cluster[open] .pt { animation: draw-together .45s ease-out both; }
+.inv-cluster[open] .pt:nth-child(2) { animation-delay: .09s; }
+.inv-cluster[open] .pt:nth-child(3) { animation-delay: .18s; }
 @keyframes draw-together {
   from { opacity: .35; transform: translateY(-10px) scale(.97); }
   to   { opacity: 1;   transform: none; }
 }
-@media (prefers-reduced-motion: reduce) {
-  .inv-cluster[open] .pt { animation: none; }
-}
 
-/* Indicator lights on the case file. */
-.ind { border: 1px solid #1e293b; border-radius: .375rem; padding: .875rem 1rem; background: #111c2f; }
-.ind-red   { border-color: #7f1d1d; background: #1a1113; }
-.ind-amber { border-color: #78350f; background: #191510; }
-.ind-green { border-color: #14532d; background: #101a14; }
-.ind-dot { width: .5rem; height: .5rem; border-radius: 9999px; display: inline-block; }
-.ind-red   .ind-dot { background: #ef4444; }
-.ind-amber .ind-dot { background: #f59e0b; }
-.ind-green .ind-dot { background: #22c55e; }
+.ind { border: 1px solid #1b2c3d; border-radius: var(--radius); padding: .875rem 1rem; background: #0f1e2e; }
+.ind-red   { border-color: #5d2320; background: #17100f; }
+.ind-amber { border-color: #5e3a12; background: #17130d; }
+.ind-green { border-color: #14472f; background: #0d1712; }
+.ind-dot { width: .4375rem; height: .4375rem; border-radius: 999px; display: inline-block; }
+.ind-red   .ind-dot { background: #e5675a; }
+.ind-amber .ind-dot { background: #e0a350; }
+.ind-green .ind-dot { background: #4aae7d; }
 
-/* Retrieval ranking columns. */
 .rank { font-variant-numeric: tabular-nums; }
-.rank-row { display: flex; gap: .5rem; align-items: baseline; padding: .3rem 0; border-bottom: 1px solid #1e293b; }
+.rank-row { display: flex; gap: .5rem; align-items: baseline; padding: .3rem 0; border-bottom: 1px solid #1b2c3d; }
 .rank-row:last-child { border-bottom: 0; }
-.rank-n { color: #64748b; font-size: .6875rem; width: 1.25rem; }
-.chip {
-  display: inline-block; font-size: .625rem; padding: .05rem .35rem; border-radius: .1875rem;
-  background: #1e293b; color: #94a3b8; letter-spacing: .02em;
+.rank-n {
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  color: #607d95; font-size: .625rem; width: 1.25rem;
 }
-.chip-both { background: #0e7490; color: #ecfeff; }
-.chip-concept { background: #4c1d95; color: #ede9fe; }
-.chip-lex { background: #1e3a5f; color: #dbeafe; }
+.chip {
+  display: inline-block;
+  font-family: "IBM Plex Mono", ui-monospace, monospace;
+  font-size: .5625rem; padding: .05rem .35rem; border-radius: 2px;
+  letter-spacing: .03em; background: #1b2c3d; color: #93a7b8;
+}
+.chip-both { background: #1d3a63; color: #bcd2f5; }
+.chip-concept { background: #2e2668; color: #d3ccf7; }
+.chip-lex { background: #14374a; color: #b3d5e6; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+  }
+}
+
+/* --- narrow viewports ---------------------------------------------------------
+   A fixed 15rem rail beside a dense table pushes the page sideways on a phone, and
+   a page that scrolls horizontally is a page nobody can read. Below 900px the rail
+   becomes a wrapping strip along the top and wide tables scroll inside their own
+   panel rather than dragging the document with them. */
+@media (max-width: 900px) {
+  .app-shell { flex-direction: column; }
+
+  .sidebar {
+    width: 100%;
+    flex-direction: row; flex-wrap: wrap; align-items: center;
+    gap: .25rem; padding: .5rem .75rem;
+    border-right: 0; border-bottom: 1px solid var(--institution-2);
+  }
+  .sidebar > a:first-child { padding: 0 .5rem 0 0; }
+  /* One scrolling strip rather than a wrapping block. Wrapping made the strip size
+     to its content and drag the whole document wider than the viewport; a scroll
+     container has a definite width and cannot. It is also the better interaction —
+     nav position stays stable instead of reflowing as badge counts change. */
+  .sidebar > nav {
+    display: flex; flex-wrap: nowrap; gap: .2rem;
+    flex: 1 1 100%; width: 100%; min-width: 0;
+    margin: 0; padding: 0;
+    overflow-x: auto; scrollbar-width: none;
+  }
+  .sidebar > nav::-webkit-scrollbar { display: none; }
+  .nav-link { flex: 0 0 auto; white-space: nowrap; }
+  /* Section headings order a vertical list; along a horizontal strip they only add noise. */
+  .nav-section { display: none; }
+  .nav-link { border-left: 0; border-bottom: 2px solid transparent; padding: .3rem .5rem; }
+  .nav-on { border-left: 0; border-bottom-color: #7ea6ff; }
+  /* The synthetic-data notice is repeated in the page footer, so nothing is lost. */
+  .sidebar > div:last-child { display: none; }
+
+  main { padding-left: 1rem !important; padding-right: 1rem !important; }
+  /* Grid and flex items default to min-width:auto and refuse to shrink below their
+     content, which is how one long cell drags a whole page sideways. */
+  main *, .sidebar * { min-width: 0; }
+  /* The retrieval query box asks for 22rem, which is wider than a phone. */
+  .inv input[type="text"], .inv input:not([type]) { min-width: 0 !important; }
+  .inv { margin: -1.5rem -1rem; padding: 1.5rem 1rem 2.5rem; }
+
+  /* Wide tables scroll inside their own wrapper, so the document keeps its width.
+     Wrapped explicitly in the templates rather than selected with :has(), which is
+     not a thing to depend on when a demo may be opened in whatever browser is to
+     hand. */
+  .tbl { min-width: 40rem; }
+  .tbl thead th { position: static; }
+}
+
+/* Every .tbl is wrapped in one of these. Above the mobile breakpoint it is inert. */
+.tbl-scroll { overflow-x: auto; }
+
+/* Below 640px every multi-column grid collapses to one column. Two metric cards
+   side by side on a phone leaves neither readable, and a grid whose items will not
+   shrink is what drags the document wider than the screen. */
+@media (max-width: 640px) {
+  main .grid { grid-template-columns: minmax(0, 1fr) !important; }
+}
+
+/* The shell is pinned to the viewport so that no single stubborn descendant can set
+   the width of the whole document. Deliberately no `overflow-x: hidden` here — that
+   hides the symptom by clipping real content, and the causes are fixed above:
+   identifiers wrap, grid and flex items may shrink, wide tables scroll in their own
+   wrapper, and the rail is a scrolling strip rather than a wrapping block. */
+@media (max-width: 900px) {
+  .app-shell { width: 100vw; max-width: 100vw; }
+  .app-shell > * { max-width: 100vw; }
+}
