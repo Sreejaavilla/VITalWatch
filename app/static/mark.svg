@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 142" role="img" aria-label="VITalWatch">
+  <defs>
+    <linearGradient id="s" x1=".1" y1="0" x2=".9" y2="1">
+      <stop offset="0" stop-color="#31509a"/>
+      <stop offset="1" stop-color="#182a63"/>
+    </linearGradient>
+    <path id="shield" d="M10 18 Q60 0 110 18 L110 78 Q110 112 60 138 Q10 112 10 78 Z"/>
+    <clipPath id="c"><use href="#shield"/></clipPath>
+  </defs>
+
+  <use href="#shield" fill="url(#s)"/>
+
+  <g clip-path="url(#c)">
+    <!-- the socket: a darker lens, so the eye reads as an opening rather than a line -->
+    <path d="M2 96 Q60 56 118 96 Q60 134 2 96 Z" fill="#101c33"/>
+
+    <g fill="none" stroke="#6fdfcb" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+      <!-- lid -->
+      <path d="M8 94 Q60 58 112 94"/>
+      <!-- pupil -->
+      <circle cx="58" cy="101" r="14"/>
+      <!-- trace: the R wave rises out of the eye -->
+      <path d="M36 99 L47 93 L56.5 24 L64 108 L71 91 L81 99"/>
+    </g>
+  </g>
+</svg>
