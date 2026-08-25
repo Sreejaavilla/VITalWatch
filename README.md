@@ -10,8 +10,9 @@ Centre (NPvCC)** for ASU&H drugs.
 > Adverse-event terms are coded against a curated vocabulary written for this project.
 > **MedDRA and WHODrug are licensed commercial dictionaries and are not used in this build.**
 
-Build plan and phase checklists: [ROADMAP.md](./ROADMAP.md).
 Demo path, compliance mapping and Q&A prep: [`docs/`](./docs).
+
+Live deployment: [https://vitalwatch-cze1.onrender.com/](https://vitalwatch-cze1.onrender.com/)
 
 ## Run it
 

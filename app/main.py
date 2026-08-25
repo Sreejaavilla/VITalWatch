@@ -21,7 +21,7 @@ from datetime import date, datetime, timedelta
 from pathlib import Path
 
 from fastapi import Depends, FastAPI, Form, HTTPException, Request
-from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
@@ -227,6 +227,12 @@ def api_study_kpi(study_id: str, db: Connection = Depends(get_db)):
 def verify_chain(db: Connection = Depends(get_db)):
     """Walk the audit hash chain and report whether it is intact."""
     return audit.verify(db)
+
+
+@app.get("/robots.txt", response_class=PlainTextResponse, tags=["ops"])
+def robots():
+    """Discourage all bots and security scanners from indexing this demo."""
+    return "User-agent: *\nDisallow: /"
 
 
 # ------------------------------------------------------------------------- pages
