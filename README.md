@@ -14,6 +14,8 @@ Demo path, compliance mapping and Q&A prep: [`docs/`](./docs).
 
 Live deployment: [https://vitalwatch-cze1.onrender.com/](https://vitalwatch-cze1.onrender.com/)
 
+> **Note on Access:** Free `.onrender.com` domains are sometimes blocked by default on certain home ISPs (such as Jio or Airtel WiFi) due to aggressive DNS filters. If the site fails to load, please switch to a mobile hotspot or use a custom DNS (like `1.1.1.1`).
+
 ## Run it
 
 ```bash
